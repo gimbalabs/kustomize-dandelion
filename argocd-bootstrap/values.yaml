@@ -1,6 +1,9 @@
 git:
   targetRevision: null
 
+cardano:
+  network: null
+
 argo-cd:
   enabled: true
   server:
