@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: main-app
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
+    targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
+    path: applications/main-app
+    helm:
+      parameters:
+        # This could be used to test dev branches.
+        - name: "git.targetRevision"
+          value: {{ .Values.git.targetRevision | default "HEAD" }}
+      valueFiles:
+        - values-{{ .Values.clusterName }}.yaml
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc

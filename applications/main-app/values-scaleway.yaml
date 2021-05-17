@@ -1,0 +1,5 @@
+cluster:
+  name: "scaleway"
+
+dockerHubSecrets:
+  enabled: false

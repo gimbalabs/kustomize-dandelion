@@ -1,0 +1,12 @@
+git:
+  targetRevision: null
+
+argo-cd:
+  enabled: true
+  server:
+    extraArgs:
+      - --insecure
+    config:
+      repositories: |
+        - url: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
+          name: kustomize-dandelion
