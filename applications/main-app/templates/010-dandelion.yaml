@@ -8,14 +8,10 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:speedwing/kubernetes-staking.git
+    repoURL: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
     targetRevision: {{ .Values.git.targetRevision }}
-    path: kubernetes/applications/grafana-dashboards
+    path: overlays/{{ .Values.cardano.network }}
 
   destination:
-    namespace: observe
+    namespace: dandelion-testnet
     server: {{ .Values.spec.destination.server }}
-
-  syncPolicy:
-    automated:
-      prune: true
