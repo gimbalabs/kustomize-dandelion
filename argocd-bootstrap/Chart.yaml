@@ -3,8 +3,8 @@ name: argocd-bootstrap
 version: 0.0.1
 dependencies:
   - name: argo-cd
-    version: 2.11.0
+    version: 2.14.7
     repository: https://argoproj.github.io/argo-helm
   - name: sealed-secrets
-    version: 1.13.2
+    version: 1.16.1
     repository: https://bitnami-labs.github.io/sealed-secrets
