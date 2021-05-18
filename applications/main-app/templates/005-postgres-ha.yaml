@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: postgres-ha
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: postgresql-ha
+    targetRevision: 6.6.6
+    helm:
+      parameters:
+        # This could be used to test dev branches.
+        - name: "git.targetRevision"
+          value: {{ .Values.git.targetRevision | default "HEAD" }}
+        - name: "cardano.network"
+          value: {{ .Values.cardano.network | default "testnet" }}
+      values: |
+        postgresql:
+          replicaCount: 1
+          updateStrategyType: OnDelete
+          password: cdbsCHANGEME
+          database: cdbs
+          usePasswordFile: false
+          repmgrUsername: repmgruser
+          repmgrPassword: repmgrpassword
+          repmgrDatabase: repmgrdatabase
+        pgpool:
+          customUsers:
+            usernames: 'postgrest_ro'
+            passwords: 'CHANGEME'
+        metrics:
+          enabled: true
+        persistence:
+          size: 40Gi
+
+
+
+  destination:
+    namespace: dandelion-{{ .Values.cardano.network }}
+    server: https://kubernetes.default.svc

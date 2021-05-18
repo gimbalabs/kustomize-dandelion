@@ -13,3 +13,6 @@ argo-cd:
       repositories: |
         - url: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
           name: kustomize-dandelion
+        - url:  https://charts.bitnami.com/bitnami
+          name: bitnami
+          type: helm
