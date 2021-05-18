@@ -8,7 +8,7 @@ commonLabels:
 commonAnnotations:
   note: free-apis!
 generators:
-- helm-chartInflator-postgres-ha.yaml
+#- helm-chartInflator-postgres-ha.yaml
 #- helm-chartInflator-kong.yaml
 #- helm-chartInflator-konga.yaml
 bases:
