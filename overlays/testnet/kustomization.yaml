@@ -28,10 +28,10 @@ resources:
 
 patches:
 # FIXME: ugly hack to inject postgres read-only user
-- path: patches/postgres-ha-secret.yaml
-  target:
-    kind: Secret
-    name: init0-postgresql-ha-postgresql
+#- path: patches/postgres-ha-secret.yaml
+#  target:
+#    kind: Secret
+#    name: init0-postgresql-ha-postgresql
 - path: patches/genesis-image.yaml
   target:
     kind: Deployment
