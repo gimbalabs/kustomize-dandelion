@@ -11,6 +11,15 @@ Before bootstrapping ArgoCD, it's necessary to fetch all Helm dependencies.
 ```shell
 kubectl create ns argocd
 helm dependency build
+helm dependency update
+
+helm upgrade --install argocd \
+    --set git.targetRevision=argocd \ # Branches are used to deploy a version different from main
+    --set clusterName=scaleway -f values-testnet.yaml -n argocd .
 ```
 
 ## App of Apps
+
+Bootstrapping a cluster with the AppOfApps approach
+
+https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/

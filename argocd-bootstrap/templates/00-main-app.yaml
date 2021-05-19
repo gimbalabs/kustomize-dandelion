@@ -18,7 +18,7 @@ spec:
         - name: "cardano.network"
           value: {{ .Values.cardano.network | default "testnet" }}
       valueFiles:
-        - values-{{ .Values.clusterName }}.yaml
+        - values-{{ .Values.provider.name }}.yaml
   destination:
     namespace: argocd
     server: https://kubernetes.default.svc

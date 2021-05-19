@@ -1,6 +1,9 @@
 git:
   targetRevision: null
 
+provider:
+  name: null
+
 cardano:
   network: null
 

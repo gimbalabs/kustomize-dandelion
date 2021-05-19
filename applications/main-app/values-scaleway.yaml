@@ -1,5 +1,1 @@
-cluster:
-  name: "scaleway"
-
-dockerHubSecrets:
-  enabled: false
+# Here scaleway specific config can be specified

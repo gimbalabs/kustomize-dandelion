@@ -41,4 +41,4 @@ spec:
 
   destination:
     namespace: dandelion-{{ .Values.cardano.network }}
-    server: https://kubernetes.default.svc
+    server: {{ .Values.spec.destination.server }}
