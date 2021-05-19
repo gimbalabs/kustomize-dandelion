@@ -41,8 +41,8 @@ spec:
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: passwords
+              name: init0-postgresql-ha-postgresql
+              key: postgresql-password
         image: inputoutput/cardano-explorer-api:3.1.2
         imagePullPolicy: IfNotPresent
         name: cardano-explorer-api
@@ -92,7 +92,7 @@ spec:
           name: common-env
       - name: postgres-password
         secret:
-          secretName: init0-postgresql-ha-pgpool-custom-users
+          secretName: init0-postgresql-ha-postgresql
           items:
-          - key: passwords
+          - key: postgresql-password
             path: POSTGRES_PASSWORD
