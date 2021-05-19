@@ -110,7 +110,7 @@ spec:
           name: common-env
       - name: postgres-password
         secret:
-          secretName: init0-postgresql-ha-postgresql
+          secretName: init0-postgresql-ha-pgpool-custom-users
           items:
-          - key: postgrest-ro-password
+          - key: passwords
             path: POSTGREST_RO_PASSWORD
