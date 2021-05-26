@@ -12,6 +12,9 @@ argo-cd:
   server:
     extraArgs:
       - --insecure
+    ingress:
+      enabled: true
+      hosts: argocd.local
     config:
       repositories: |
         - url: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
