@@ -17,9 +17,13 @@ argo-cd:
       hosts:
         - argocd.local
     config:
+      secret:
+        argocdServerAdminPassword: null
       repositories: |
         - url: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
           name: kustomize-dandelion
         - url:  https://charts.bitnami.com/bitnami
           name: bitnami
           type: helm
+
+argo-cd.server.config.secret.argocdServerAdminPassword
