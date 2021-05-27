@@ -19,6 +19,10 @@ spec:
           value: {{ .Values.cardano.network | default "testnet" }}
       valueFiles:
         - values-{{ .Values.provider.name }}.yaml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
   destination:
     namespace: argocd
     server: https://kubernetes.default.svc
