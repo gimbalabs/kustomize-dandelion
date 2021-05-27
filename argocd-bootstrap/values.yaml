@@ -17,8 +17,6 @@ argo-cd:
       hosts:
         - argocd.local
     config:
-      secret:
-        - argocdServerAdminPassword: null
       repositories: |
         - url: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
           name: kustomize-dandelion
