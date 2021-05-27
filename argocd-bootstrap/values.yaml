@@ -25,5 +25,3 @@ argo-cd:
         - url:  https://charts.bitnami.com/bitnami
           name: bitnami
           type: helm
-
-argo-cd.server.config.secret.argocdServerAdminPassword

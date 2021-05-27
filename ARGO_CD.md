@@ -30,7 +30,7 @@ kubectl create ns argocd
 
 helm upgrade --install argocd \
     --set git.targetRevision=argocd \
-    --set clusterName=scaleway -f values-scaleway-testnet.yaml -n argocd .
+    -f values-scaleway-testnet.yaml -n argocd .
 ```
 
 ## Access ArgoCD
