@@ -60,7 +60,11 @@ Alternatively you can set the password at bootstrap time. Steps are:
 
 1. Generate a new password
 2. Use the bcrypt to hash the password. You can use this convenience [website](https://www.browserling.com/tools/bcrypt) to do so.
-3. Specify the password when bootstrapping the cluster by appending `--set "argo-cd.server.config.secret.argocdServerAdminPassword=<hashed_password>"`
+3. Specify the password when bootstrapping the cluster by appending
+```bash
+--set "argo-cd.configs.secret.argocdServerAdminPassword"='<bcrypt_hashed_password>' \
+--set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
+```
 
 ## How to deploy a different or test version
 
