@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    io.kompose.service: dandelion-metrics-exporter
+    prometheus: enabled
+  name: dandelion-metrics-exporter
+spec:
+  endpoints:
+  - port: metrics
+    path: /
+    interval: 20s
+    targetPort: 9100
+  namespaceSelector:
+    matchNames:
+    - cardano
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dandelion-metrics-exporter
