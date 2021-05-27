@@ -22,6 +22,8 @@ This means that the ArgoCD will first install itself and then proceed to install
 
 Before bootstrapping ArgoCD, it's necessary to fetch all Helm dependencies.
 
+> **NOTE**: Please check section below on how to set a custom password to access ArgoCD. 
+
 ```shell
 helm dependency build
 helm dependency update
@@ -36,7 +38,7 @@ helm upgrade --install argocd \
 ## Access ArgoCD
 
 ArgoCD requires username and password authentication. By default, at the moment of deploying ArgoCD for the first time,
-ArgoCD sets the password to the full pod name of the argocd-server. You can easily find it by issueing:
+ArgoCD sets the password to the full pod name of the `argocd-server`. You can easily find it by issuing:
 
 ```bash
 kubectl get po -n argocd
@@ -62,8 +64,11 @@ Alternatively you can set the password at bootstrap time. Steps are:
 2. Use the bcrypt to hash the password. You can use this convenience [website](https://www.browserling.com/tools/bcrypt) to do so.
 3. Specify the password when bootstrapping the cluster by appending
 ```bash
---set "argo-cd.configs.secret.argocdServerAdminPassword"='<bcrypt_hashed_password>' \
---set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
+helm upgrade --install argocd \
+    --set git.targetRevision=argocd \
+    --set "argo-cd.configs.secret.argocdServerAdminPassword"='<bcrypt_hashed_password>' \
+    --set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
+    -f values-scaleway-testnet.yaml -n argocd .
 ```
 
 ## How to deploy a different or test version
