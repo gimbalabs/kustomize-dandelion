@@ -7,6 +7,11 @@
 
 # Local deployment
 
+There currently are two ways to deploy Dandelion:
+
+* Render and deploy Kustomize manifests
+* Leverage ArgoCD to bootstrap the kubernetes cluster [docs](/ARGO_CD.md)
+
 ## Setup local k3d 
 
 Assuming you are already running [docker] locally, and have both, [kubectl] and [k3d] binaries installed, you could create a `k3d` cluster like this (customize port mappings if you feel to):

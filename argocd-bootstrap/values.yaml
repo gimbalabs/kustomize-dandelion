@@ -1,0 +1,25 @@
+git:
+  targetRevision: null
+
+provider:
+  name: null
+
+cardano:
+  network: null
+
+argo-cd:
+  enabled: true
+  server:
+    extraArgs:
+      - --insecure
+    ingress:
+      enabled: true
+      hosts:
+        - argocd.local
+    config:
+      repositories: |
+        - url: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
+          name: kustomize-dandelion
+        - url:  https://charts.bitnami.com/bitnami
+          name: bitnami
+          type: helm
