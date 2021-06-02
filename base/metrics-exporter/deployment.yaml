@@ -69,8 +69,8 @@ spec:
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: init0-postgresql-ha-postgresql
-              key: postgrest-ro-password
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
         - name: PGRST_DB_ANON_ROLE
           valueFrom:
             configMapKeyRef:
@@ -102,7 +102,7 @@ spec:
           name: common-env
       - name: postgres-password
         secret:
-          secretName: init0-postgresql-ha-postgresql
+          secretName: init0-postgresql-ha-pgpool-custom-users
           items:
-          - key: postgrest-ro-password
+          - key: passwords
             path: POSTGREST_RO_PASSWORD
