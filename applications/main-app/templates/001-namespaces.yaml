@@ -8,13 +8,3 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: dandelion-testnet
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: observe
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: logging

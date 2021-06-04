@@ -13,7 +13,6 @@ generators:
 #- helm-chartInflator-konga.yaml
 bases:
 - ../../base/cardano-db-sync
-- ../../base/cardano-explorer-api
 - ../../base/cardano-graphql
 - ../../base/cardano-hasura
 - ../../base/cardano-node
@@ -72,11 +71,6 @@ patches:
   target:
     kind: Deployment
     name: cardano-submit-api
-# cardano-explorer-api
-- path: patches/cardano-explorer-api-deployment-env.yaml
-  target:
-    kind: Deployment
-    name: cardano-explorer-api
 # ogmios
 - path: patches/ogmios-deployment-env.yaml
   target:

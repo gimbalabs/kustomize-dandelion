@@ -1,22 +1,3 @@
-apiVersion: networking.k8s.io/v1beta1
-kind: Ingress
-metadata:
-  name: cardano-explorer-api
-spec:
-  rules:
-    - host: explorer-api.testnet.local
-      http:
-        paths:
-          - backend:
-              serviceName: cardano-explorer-api
-              servicePort: 8101
-            path: /
-  # This section is only required if TLS is to be enabled for the Ingress
-  tls:
-  - hosts:
-    - explorer-api.testnet.local
-    #secretName: local-tls
-
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress

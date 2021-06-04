@@ -11,7 +11,6 @@ generators:
 - helm-chartInflator-postgres-ha.yaml
 bases:
 - ../../base/cardano-db-sync
-- ../../base/cardano-explorer-api
 - ../../base/cardano-graphql
 - ../../base/cardano-hasura
 - ../../base/cardano-node
