@@ -1,1 +1,7 @@
-## Scaleway specific observability config
+kubePrometheusStack:
+  prometheus:
+    prometheusSpec:
+      retention: 3d
+  grafana:
+    plugins:
+      - grafana-piechart-panel
