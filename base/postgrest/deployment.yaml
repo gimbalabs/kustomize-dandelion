@@ -71,3 +71,4 @@ spec:
           secretName: init0-postgresql-ha-pgpool-custom-users
           items:
           - key: passwords
+            path: POSTGREST_RO_PASSWORD
