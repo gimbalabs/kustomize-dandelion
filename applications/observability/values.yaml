@@ -1,0 +1,2 @@
+# This is currently k3s specific.
+# TODO parameterize based on k8s platform

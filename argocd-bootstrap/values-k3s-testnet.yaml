@@ -1,0 +1,5 @@
+provider:
+  name: k3s
+
+cardano:
+  network: testnet

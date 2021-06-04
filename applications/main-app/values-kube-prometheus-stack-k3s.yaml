@@ -1,0 +1,160 @@
+kubePrometheusStack:
+  # Disable etcd monitoring. See https://github.com/cablespaghetti/k3s-monitoring/issues/4
+  kubeEtcd:
+    enabled: false
+
+  # Disable kube-controller-manager and kube-scheduler monitoring. See https://github.com/cablespaghetti/k3s-monitoring/issues/2
+  kubeControllerManager:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+
+  alertmanager:
+    config:
+      global:
+        smtp_from: you@gmail.com
+        smtp_smarthost: mailhog:1025
+        smtp_require_tls: false
+      #  smtp_smarthost: smtp.gmail.com:587
+      #  smtp_auth_username: you@gmail.com
+      #  smtp_auth_password: yourapppassword # https://support.google.com/mail/answer/185833?hl=en-GB
+      #  smtp_auth_identity: you@gmail.com
+      route:
+        group_by: ['job']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 1h
+        receiver: email
+        routes:
+          - match:
+              alertname: Watchdog
+            receiver: 'null'
+          - match:
+              alertname: CPUThrottlingHigh
+            receiver: 'null'
+          - match:
+              alertname: KubeMemoryOvercommit
+            receiver: 'null'
+          - match:
+              alertname: KubeCPUOvercommit
+            receiver: 'null'
+          - match:
+              alertname: KubeletTooManyPods
+            receiver: 'null'
+
+      receivers:
+        - name: 'null'
+        - name: email
+          email_configs:
+            - send_resolved: true
+              to: youremail@gmail.com
+
+      # Inhibition rules allow to mute a set of alerts given that another alert is firing.
+      # We use this to mute any warning-level notifications if the same alert is already critical.
+      inhibit_rules:
+        - source_match:
+            severity: 'critical'
+          target_match:
+            severity: 'warning'
+          # Apply inhibition if the alertname is the same.
+          equal: ['alertname', 'namespace']
+
+    alertmanagerSpec:
+      #    replicas: 3
+      #    podAntiAffinity: "soft"
+      storage:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 1Gi
+  #    resources:
+  #      limits:
+  #        cpu: 500m
+  #        memory: 64Mi
+  #      requests:
+  #        cpu: 25m
+  #        memory: 32Mi
+  #    priorityClassName: high-priority
+
+
+  prometheus:
+    prometheusSpec:
+      retention: 3d
+
+      #    replicas: 2
+      #    podAntiAffinity: "hard"
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 10Gi
+
+  #    resources:
+  #      limits:
+  #        cpu: "2"
+  #        memory: 5Gi
+  #      requests:
+  #        cpu: 100m
+  #        memory: 4Gi
+  #    priorityClassName: high-priority
+  #
+  #  service:
+  #    sessionAffinity: "ClientIP"
+  #
+
+  grafana:
+    plugins:
+      - grafana-piechart-panel
+  #  resources:
+  #    limits:
+  #      cpu: 500m
+  #      memory: 128Mi
+  #    requests:
+  #      cpu: 25m
+  #      memory: 64Mi
+  # #
+  #   sidecar:
+  #     datasources:
+  #     enabled: true
+  #     label: grafana_datasource
+  # #    resources:
+  # #      limits:
+  # #        cpu: 100m
+  #        memory: 128Mi
+  #      requests:
+  #        cpu: 5m
+  #        memory: 64Mi
+
+  #prometheusOperator:
+  #  resources:
+  #    limits:
+  #      cpu: 1
+  #      memory: 512Mi
+  #    requests:
+  #      cpu: 50m
+  #      memory: 128Mi
+  #  priorityClassName: high-priority
+
+  #prometheus-node-exporter:
+  #  resources:
+  #    limits:
+  #      cpu: 50m
+  #      memory: 50Mi
+  #    requests:
+  #      cpu: 5m
+  #      memory: 16Mi
+  #  priorityClassName: high-priority
+
+  # kube-state-metrics:
+  # #  resources:
+  # #    limits:
+  # #      cpu: 1
+  # #      memory: 512Mi
+  # #    requests:
+  # #      cpu: 5m
+  # #      memory: 128Mi
+  # #  priorityClassName: high-priority

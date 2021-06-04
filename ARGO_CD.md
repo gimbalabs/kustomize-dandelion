@@ -31,7 +31,7 @@ helm dependency update
 kubectl create ns argocd
 
 helm upgrade --install argocd \
-    --set git.targetRevision=argocd \
+    --set git.targetRevision=DND-Observability-Take1 \
     -f values-scaleway-testnet.yaml -n argocd .
 ```
 
@@ -65,10 +65,10 @@ Alternatively you can set the password at bootstrap time. Steps are:
 3. Specify the password when bootstrapping the cluster by appending
 ```bash
 helm upgrade --install argocd \
-    --set git.targetRevision=argocd \
-    --set "argo-cd.configs.secret.argocdServerAdminPassword"='<bcrypt_hashed_password>' \
+    --set git.targetRevision=DND-Observability-Take1 \
+    --set "argo-cd.configs.secret.argocdServerAdminPassword"='$2a$10$GG4A3RZ.TNYNGoVoPmlCrOO9PgwVy9lTN3s.mhfLO1JwzCALpuoLW' \
     --set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
-    -f values-scaleway-testnet.yaml -n argocd .
+    -f values-k3s-testnet.yaml -n argocd .
 ```
 
 ## How to deploy a different or test version
