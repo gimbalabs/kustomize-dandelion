@@ -1,0 +1,5 @@
+namespace: dandelion
+resources:
+- deployment.yaml
+- service.yaml
+- servicemonitor.yaml
