@@ -12,6 +12,7 @@ generators:
 #- helm-chartInflator-kong.yaml
 #- helm-chartInflator-konga.yaml
 bases:
+- ../../base/common
 - ../../base/cardano-db-sync
 - ../../base/cardano-graphql
 - ../../base/cardano-hasura
