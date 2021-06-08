@@ -31,7 +31,6 @@ helm dependency update
 kubectl create ns argocd
 
 helm upgrade --install argocd \
-    --set git.targetRevision=DND-FixPsqlReadOnly \
     -f values-scaleway-testnet.yaml -n argocd .
 ```
 
