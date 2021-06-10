@@ -71,6 +71,7 @@ spec:
             command: ["bash", "/configmap/liveness-healthcheck"]
           initialDelaySeconds: 300
           periodSeconds: 20
+          timeout: 10
       - name: socat-socket-server
         image: alpine/socat
         env:
