@@ -36,26 +36,18 @@ helm upgrade --install argocd \
 
 ## Access ArgoCD
 
-ArgoCD requires username and password authentication. By default, at the moment of deploying ArgoCD for the first time,
-ArgoCD sets the password to the full pod name of the `argocd-server`. You can easily find it by issuing:
+ArgoCD requires username and password authentication. By default, at the moment of deploying ArgoCD for the first time, username is `admin` and password is set to the full pod name of the `argocd-server`.
+You can easily find the password and access the service by following these steps:
 
+* Get default username/password:
 ```bash
-kubectl get po -n argocd
+POD_NAME=$(kubectl get pod -n argocd --selector 'app.kubernetes.io/name=argocd-server' --template='{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+echo -e "Username: admin\nPassword: ${POD_NAME}"
 ```
-
-You should see something like:
-
+* Expose ArgoCD server port locally on your machine so you can access it via http://localhost:8080:
 ```bash
-NAME                                             READY   STATUS    RESTARTS   AGE
-argocd-redis-5cff4b6bf8-qt9j4                    1/1     Running   1          8d
-argocd-dex-server-85cbb9b898-pxsh2               1/1     Running   1          8d
-argocd-sealed-secrets-5846ff6b9d-4gghf           1/1     Running   1          8d
-argocd-repo-server-5f66948994-n2dl7              1/1     Running   1          8d
-argocd-server-75df64fb9f-246cn                   1/1     Running   1          8d
-argocd-application-controller-7c9d5ffb86-mmw67   1/1     Running   1          8d
+kubectl port-forward -n argocd ${POD_NAME} 8080:8080
 ```
-
-In this case the password is: `argocd-server-75df64fb9f-246cn`
 
 Alternatively you can set the password at bootstrap time. Steps are:
 
