@@ -64,6 +64,14 @@ spec:
           readOnly: true
         - name: dbsync-statedir
           mountPath: /var/lib/cdbsync
+        - name: cardano-db-sync-configmap
+          mountPath: /configmap
+        livenessProbe:
+          exec:
+            command: ["bash", "/configmap/liveness-healthcheck"]
+          initialDelaySeconds: 300
+          periodSeconds: 20
+          timeout: 10
       - name: socat-socket-server
         image: alpine/socat
         env:
@@ -95,6 +103,9 @@ spec:
       - name: dbsync-statedir
         persistentVolumeClaim:
           claimName: dbsync-statedir
+      - name: cardano-db-sync-configmap
+        configMap:
+          name: cardano-db-sync-configmap
 
   volumeClaimTemplates:
   - metadata:

@@ -10,6 +10,7 @@ commonAnnotations:
 generators:
 - helm-chartInflator-postgres-ha.yaml
 bases:
+- ../../base/common
 - ../../base/cardano-db-sync
 - ../../base/cardano-graphql
 - ../../base/cardano-hasura

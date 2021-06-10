@@ -18,3 +18,8 @@ data:
     ALTER ROLE postgrest_ro WITH login;
     ALTER USER postgrest_ro WITH PASSWORD 'CHANGEME';
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO postgrest_ro;
+  liveness-healthcheck: |
+    KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" ${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync | tail -n10 | grep -q "insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch"
