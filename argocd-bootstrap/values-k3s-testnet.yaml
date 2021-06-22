@@ -6,7 +6,7 @@ cardano:
 
 dandelion:
   deployIngress: false
-  cardano_db_sync:
+  cardanoDbSync:
     enabled: true
   cardano_graphql:
     enabled: true
@@ -18,7 +18,6 @@ dandelion:
     enabled: true
   postgrest:
     enabled: true
-# these are gonna be deprecated soon
   cardano_explorer_api:
     enabled: false
   cardano_submit_api:
