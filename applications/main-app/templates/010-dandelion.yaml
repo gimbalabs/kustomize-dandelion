@@ -11,7 +11,7 @@ spec:
     - repoURL: {{ .Values.git.repositoryUrl }}
       targetRevision: {{ .Values.git.targetRevision }}
       path: overlays/{{ .Values.cardano.network }}-base
-{{- if .Values.dandelion.cardano-db-sync.enabled -}}
+{{- if .Values.dandelion.cardano_db_sync.enabled -}}
     - repoURL: {{ .Values.git.repositoryUrl }}
       targetRevision: {{ .Values.git.targetRevision }}
       path: base/cardano-db-sync

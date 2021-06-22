@@ -25,6 +25,8 @@ Before bootstrapping ArgoCD, it's necessary to fetch all Helm dependencies.
 > **NOTE**: Please check section below on how to set a custom password to access ArgoCD. 
 
 ```shell
+cd argocd-bootstrap
+
 helm dependency build
 helm dependency update
 
