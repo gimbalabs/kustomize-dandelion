@@ -1,3 +1,4 @@
 namespace: dandelion
 resources:
+- common-env.yaml
 - rbac.yaml

@@ -32,9 +32,9 @@ spec:
               key: POSTGRES_PORT
         - name: POSTGRES_USER
           valueFrom:
-            configMapKeyRef:
-              name: common-env
-              key: POSTGREST_USER_RO
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
         - name: POSTGRES_PASS
           valueFrom:
             secretKeyRef:

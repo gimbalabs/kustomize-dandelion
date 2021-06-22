@@ -3,3 +3,23 @@ provider:
 
 cardano:
   network: testnet
+
+dandelion:
+  deployIngress: false
+  cardano-db-sync:
+    enabled: true
+  cardano-graphql:
+    enabled: true
+  cardano-rosetta:
+    enabled: true
+  metrics-exporter:
+    enabled: true
+  ogmios:
+    enabled: true
+  postgrest:
+    enabled: true
+# these are gonna be deprecated soon
+  cardano-explorer:
+    enabled: false
+  cardano-submit-api:
+    enabled: false

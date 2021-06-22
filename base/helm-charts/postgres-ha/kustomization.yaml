@@ -1,0 +1,6 @@
+helmCharts:
+- name: postgresql-ha
+  valuesFile: helm-values.yaml
+  releaseName: init0
+  version: 7.7.1
+  repo: https://charts.bitnami.com/bitnami

@@ -1,0 +1,45 @@
+namespace: dandelion-mainnet
+commonLabels:
+  environment: production
+  cardano_network: mainnet
+  cardano_node_type: haskell
+  project_name: dandelion
+commonAnnotations:
+  note: free-apis!
+
+bases:
+- ../mainnet-base
+- ../../base/helm-charts/postgres-ha
+- ../../base/cardano-db-sync
+- ../../base/cardano-graphql
+- ../../base/cardano-hasura
+- ../../base/cardano-rosetta
+- ../../base/cardano-submit-api
+- ../../base/metrics-exporter
+- ../../base/ogmios
+- ../../base/postgrest
+- ../../base/postgres-ws
+
+resources:
+- resources/ingress.yaml
+
+patches:
+# cardano-graphql
+- path: patches/genesis-image.yaml
+  target:
+    kind: Deployment
+    name: cardano-graphql
+# cardano-db-sync
+- path: patches/cardano-db-sync-deployment-env.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+- path: patches/cardano-db-sync-deployment-image.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+# cardano-rosetta
+- path: patches/cardano-rosetta-deployment-image.yaml
+  target:
+    kind: Deployment
+    name: cardano-rosetta

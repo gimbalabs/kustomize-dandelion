@@ -1,5 +1,4 @@
 namespace: dandelion-testnet
-#namePrefix: ptn0-
 commonLabels:
   environment: production
   cardano_network: testnet
@@ -7,32 +6,25 @@ commonLabels:
   project_name: dandelion
 commonAnnotations:
   note: free-apis!
-generators:
-#- helm-chartInflator-postgres-ha.yaml
-#- helm-chartInflator-kong.yaml
-#- helm-chartInflator-konga.yaml
+
 bases:
-- ../../base/common
+- ../testnet-base
+- ../../base/helm-charts/postgres-ha
 - ../../base/cardano-db-sync
 - ../../base/cardano-graphql
 - ../../base/cardano-hasura
-- ../../base/cardano-node
 - ../../base/cardano-rosetta
 - ../../base/cardano-submit-api
 - ../../base/metrics-exporter
 - ../../base/ogmios
 - ../../base/postgrest
 - ../../base/postgres-ws
+
 resources:
-- resources/common-env-configmap.yaml
 - resources/ingress.yaml
 
 patches:
-# FIXME: ugly hack to inject postgres read-only user
-#- path: patches/postgres-ha-secret.yaml
-#  target:
-#    kind: Secret
-#    name: init0-postgresql-ha-postgresql
+# cardano-graphql
 - path: patches/genesis-image.yaml
   target:
     kind: Deployment
@@ -46,23 +38,6 @@ patches:
   target:
     kind: StatefulSet
     name: cardano-db-sync
-# cardano-node
-- path: patches/cardano-node-configmap.yaml
-  target:
-    kind: ConfigMap
-    name: cardano-node
-- path: patches/cardano-node-pvc.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-node
-- path: patches/cardano-node-deployment-env.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-node
-- path: patches/cardano-node-deployment-image.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-node
 # cardano-rosetta
 - path: patches/cardano-rosetta-deployment-image.yaml
   target:

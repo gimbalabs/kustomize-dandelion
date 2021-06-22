@@ -7,10 +7,15 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    repoURL: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
-    targetRevision: {{ .Values.git.targetRevision }}
-    path: overlays/{{ .Values.cardano.network }}
+  sourceRepos:
+    - repoURL: {{ .Values.git.repositoryUrl }}
+      targetRevision: {{ .Values.git.targetRevision }}
+      path: overlays/{{ .Values.cardano.network }}-base
+{{- if .Values.dandelion.cardano-db-sync.enabled -}}
+    - repoURL: {{ .Values.git.repositoryUrl }}
+      targetRevision: {{ .Values.git.targetRevision }}
+      path: base/cardano-db-sync
+{{. end }}
 
   destination:
     namespace: dandelion-testnet

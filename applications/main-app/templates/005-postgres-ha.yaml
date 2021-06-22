@@ -1,3 +1,4 @@
+{{- if .Values.cardano-db-sync.enabled -}}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -42,3 +43,4 @@ spec:
   destination:
     namespace: dandelion-{{ .Values.cardano.network }}
     server: {{ .Values.spec.destination.server }}
+{{- end }}

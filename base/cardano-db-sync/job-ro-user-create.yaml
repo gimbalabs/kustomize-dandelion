@@ -41,6 +41,16 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
       restartPolicy: Never
       volumes:
       - name: cardano-db-sync-configmap

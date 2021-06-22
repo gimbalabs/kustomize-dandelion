@@ -1,0 +1,30 @@
+namespace: dandelion-testnet
+commonLabels:
+  environment: production
+  cardano_network: testnet
+  cardano_node_type: haskell
+  project_name: dandelion
+commonAnnotations:
+  note: free-apis!
+bases:
+- ../../base/common
+- ../../base/cardano-node
+
+patches:
+# cardano-node
+- path: patches/cardano-node-configmap.yaml
+  target:
+    kind: ConfigMap
+    name: cardano-node
+- path: patches/cardano-node-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
+- path: patches/cardano-node-deployment-env.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
+- path: patches/cardano-node-deployment-image.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node

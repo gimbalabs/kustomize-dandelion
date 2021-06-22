@@ -1,0 +1,16 @@
+- op: add
+  path: /spec/template/spec/affinity
+  value:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/component
+            operator: In
+            values:
+            - postgresql
+          - key: io.kompose.service
+            operator: In
+            values:
+            - cardano-db-sync
+        topologyKey: kubernetes.io/hostname
