@@ -15,7 +15,7 @@ spec:
     - repoURL: {{ .Values.git.repositoryUrl }}
       targetRevision: {{ .Values.git.targetRevision }}
       path: base/cardano-db-sync
-{{. end }}
+{{- end }}
 
   destination:
     namespace: dandelion-testnet
