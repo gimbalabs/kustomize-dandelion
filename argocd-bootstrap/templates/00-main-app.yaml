@@ -18,7 +18,7 @@ spec:
         - name: "cardano.network"
           value: {{ .Values.cardano.network | default "testnet" }}
         - name: "dandelion"
-          value: {{ .Values.dandelion | indent 12 }}
+          value: {{ .Values.dandelion }}
       valueFiles:
         - values-{{ .Values.provider.name }}.yaml
         - values-kube-prometheus-stack-{{ .Values.provider.name }}.yaml
