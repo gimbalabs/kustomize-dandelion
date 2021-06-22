@@ -1,4 +1,4 @@
-{{- if .Values.cardano_db_sync.enabled -}}
+{{- if .Values.dandelion.cardano_db_sync.enabled -}}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
