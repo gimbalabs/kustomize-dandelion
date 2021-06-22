@@ -6,19 +6,19 @@ cardano:
 
 dandelion:
   deployIngress: false
-  cardanoDbSync:
+  cardano-db-sync:
     enabled: true
-  cardano_graphql:
+  cardano-graphql:
     enabled: true
-  cardano_rosetta:
+  cardano-rosetta:
     enabled: true
-  metrics_exporter:
+  metrics-exporter:
     enabled: true
   ogmios:
     enabled: true
   postgrest:
     enabled: true
-  cardano_explorer_api:
+  cardano-explorer-api:
     enabled: false
-  cardano_submit_api:
+  cardano-submit-api:
     enabled: false
