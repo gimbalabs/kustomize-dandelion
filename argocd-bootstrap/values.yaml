@@ -8,6 +8,8 @@ provider:
 cardano:
   network: null
 
+dandelion: null
+
 argo-cd:
   enabled: true
   server:
