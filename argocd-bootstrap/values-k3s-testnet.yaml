@@ -4,7 +4,7 @@ provider:
 cardano:
   network: testnet
 
-dandelion:
+dandelion: |
   deployIngress: false
   cardano_db_sync:
     enabled: true
