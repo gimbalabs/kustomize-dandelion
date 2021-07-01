@@ -8,7 +8,7 @@ spec:
   project: default
   source:
     repoURL: {{ .Values.git.repositoryUrl }}
-    targetRevision: {{ .Values.git.targetRevision | default "refactor/add-base-and-multi-node-overlays" }}
+    targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
     path: applications/main-app
     helm:
       parameters:

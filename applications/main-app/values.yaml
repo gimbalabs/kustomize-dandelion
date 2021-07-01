@@ -1,5 +1,5 @@
 git:
-  repositoryUrl: https://gitlab.com/joeydouglas/kustomize-dandelion.git
+  repositoryUrl: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
   targetRevision: refactor/add-base-and-multi-node-overlays
 
 spec:
