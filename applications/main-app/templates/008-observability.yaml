@@ -7,8 +7,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://gitlab.com/joeydouglas/kustomize-dandelion.git
-    targetRevision: {{ .Values.git.targetRevision | default "refactor/add-base-and-multi-node-overlays" }}
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
     path: applications/observability
   syncPolicy:
     automated:
