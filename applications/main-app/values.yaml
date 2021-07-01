@@ -1,3 +1,7 @@
+git:
+  repositoryUrl: https://gitlab.com/joeydouglas/kustomize-dandelion.git
+  targetRevision: refactor/add-base-and-multi-node-overlays
+
 spec:
   destination:
     server: https://kubernetes.default.svc
