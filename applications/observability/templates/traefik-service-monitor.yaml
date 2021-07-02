@@ -13,4 +13,4 @@ spec:
       - kube-system
   selector:
     matchLabels:
-      app: traefik
+      app.kubernetes.io/name: traefik
