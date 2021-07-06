@@ -1,6 +1,6 @@
 git:
-  repositoryUrl: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
-  targetRevision: null
+  repositoryUrl: https://gitlab.com/joeydouglas/kustomize-dandelion.git
+  targetRevision: refactor/add-base-and-multi-node-overlays
 
 provider:
   name: null
@@ -21,7 +21,7 @@ argo-cd:
         - argocd.local
     config:
       repositories: |
-        - url: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
+        - url: https://gitlab.com/joeydouglas/kustomize-dandelion.git
           name: kustomize-dandelion
         - url:  https://charts.bitnami.com/bitnami
           name: bitnami
