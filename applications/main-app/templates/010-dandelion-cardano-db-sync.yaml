@@ -1,0 +1,20 @@
+{{- if .Values.dandelion.cardano_db_sync.enabled -}}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-{{ .Values.cardano.network }}-cardano-db-sync
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision }}
+    path: base/cardano-db-sync
+
+  destination:
+    namespace: dandelion-{{ .Values.cardano.network }}
+    server: {{ .Values.spec.destination.server }}
+
+{{- end }}
