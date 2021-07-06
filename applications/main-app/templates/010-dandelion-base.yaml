@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    - repoURL: {{ .Values.git.repositoryUrl }}
-      targetRevision: {{ .Values.git.targetRevision }}
-      path: overlays/{{ .Values.cardano.network }}-base
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision }}
+    path: overlays/{{ .Values.cardano.network }}-base
 
   destination:
     namespace: dandelion-{{ .Values.cardano.network }}
