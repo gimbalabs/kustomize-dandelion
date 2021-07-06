@@ -1,0 +1,38 @@
+{{- if .Values.dandelion.cardano_graphql.enabled -}}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-{{ .Values.cardano.network }}-cardano-graphql
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision }}
+    path: base/cardano-graphql
+
+  destination:
+    namespace: dandelion-{{ .Values.cardano.network }}
+    server: {{ .Values.spec.destination.server }}
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-{{ .Values.cardano.network }}-cardano-hasura
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision }}
+    path: base/cardano-hasura
+
+  destination:
+    namespace: dandelion-{{ .Values.cardano.network }}
+    server: {{ .Values.spec.destination.server }}
+
+{{- end }}

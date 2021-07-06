@@ -1,0 +1,20 @@
+{{- if .Values.dandelion.cardano_submit_api.enabled -}}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-{{ .Values.cardano.network }}-cardano-submit-api
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision }}
+    path: base/cardano-submit-api
+
+  destination:
+    namespace: dandelion-{{ .Values.cardano.network }}
+    server: {{ .Values.spec.destination.server }}
+
+{{- end }}

@@ -1,0 +1,20 @@
+{{- if .Values.dandelion.postgrest.enabled -}}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-{{ .Values.cardano.network }}-postgrest
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision }}
+    path: base/postgrest
+
+  destination:
+    namespace: dandelion-{{ .Values.cardano.network }}
+    server: {{ .Values.spec.destination.server }}
+
+{{- end }}
