@@ -1,4 +1,4 @@
-{{- if .Values.dandelion.cardano_ogmios.enabled -}}
+{{- if .Values.dandelion.ogmios.enabled -}}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
