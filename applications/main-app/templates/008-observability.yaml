@@ -1,4 +1,4 @@
-{{- if .Values.dandelion.monitoring.enabled and -}}
+{{- if .Values.dandelion.monitoring.enabled -}}
 
 apiVersion: argoproj.io/v1alpha1
 kind: Application
