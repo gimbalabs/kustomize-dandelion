@@ -12,6 +12,7 @@ spec:
     targetRevision: {{ .Values.git.targetRevision }}
     path: overlays/{{ .Values.cardano.network }}-base
     plugin:
+      name: kustomized-kustomize-network
       env:
         - name: CARDANO_NETWORK
           value: {{ .Values.cardano.network }}
