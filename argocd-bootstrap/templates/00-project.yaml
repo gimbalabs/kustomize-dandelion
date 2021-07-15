@@ -12,8 +12,8 @@ spec:
   - '*'
   # Only permit applications to deploy to the guestbook namespace in the same cluster
   destinations:
-    namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
-    server: {{ .Values.spec.destination.server }}
+  - namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
+    server: https://kubernetes.default.svc
   # Deny all cluster-scoped resources from being created, except for Namespace
   clusterResourceWhitelist:
   - group: ''
