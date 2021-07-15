@@ -3,6 +3,7 @@ dandelion:
     name: scaleway
   #argoAppSuffix: "-v9"
   #namespaceSuffix: "-v9"
+  #multiNode: true
   cardano:
     network: mainnet
   deployIngress: true

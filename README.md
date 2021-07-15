@@ -12,6 +12,15 @@ There currently are two ways to deploy Dandelion:
 * Render and deploy Kustomize manifests
 * Leverage ArgoCD to perform more advanced deploys. Check the specific docs [here](/ARGO_CD.md)
 
+## Minimum Requirements
+
+| Network | CPU    | RAM   | DISK |
+| ------- | ------ |------ | ---- |
+| Testnet | 4vCPU  | 8GB   | 20gb |
+| Mainnet | 24vCPU | 24GB  | 42gb |
+
+NOTE: vCPUs are recommended to be dedicated for the db synchronization to stay close to blokchain tip.
+
 ## Setup local k3d 
 
 Assuming you are already running [docker] locally, and have both, [kubectl] and [k3d] binaries installed, you could create a `k3d` cluster like this (customize port mappings if you feel to):

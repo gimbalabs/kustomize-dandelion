@@ -19,7 +19,7 @@ spec:
           value: {{ .Values.dandelion.cardano.network }}
 
   destination:
-    namespace: dandelion-{{ .Values.dandelion.cardano.network }}
+    namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
     server: {{ .Values.spec.destination.server }}
 
 apiVersion: argoproj.io/v1alpha1
@@ -42,7 +42,7 @@ spec:
           value: {{ .Values.dandelion.cardano.network }}
 
   destination:
-    namespace: dandelion-{{ .Values.dandelion.cardano.network }}
+    namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
     server: {{ .Values.spec.destination.server }}
 
 {{- end }}
