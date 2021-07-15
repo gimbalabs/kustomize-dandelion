@@ -30,9 +30,9 @@ cd argocd-bootstrap
 helm dependency build
 helm dependency update
 
-kubectl create ns argocd
-
-helm upgrade --install argocd \
+helm upgrade \
+    --create-namespace \
+    --install argocd \
     -f values-scaleway-testnet.yaml -n argocd .
 ```
 

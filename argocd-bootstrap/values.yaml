@@ -2,13 +2,11 @@ git:
   repositoryUrl: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
   targetRevision: refactor/add-base-and-multi-node-overlays
 
-provider:
-  name: null
-
-cardano:
-  network: null
-
-dandelion: null
+dandelion:
+  provider:
+    name: null
+  cardano:
+    network: null
 
 argo-cd:
   enabled: true

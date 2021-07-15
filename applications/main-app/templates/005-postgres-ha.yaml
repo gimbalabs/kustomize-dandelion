@@ -17,8 +17,8 @@ spec:
         # This could be used to test dev branches.
         - name: "git.targetRevision"
           value: {{ .Values.git.targetRevision | default "HEAD" }}
-        - name: "cardano.network"
-          value: {{ .Values.cardano.network | default "testnet" }}
+        - name: "dandelion.cardano.network"
+          value: {{ .Values.dandelion.cardano.network | default "testnet" }}
       values: |
         postgresql:
           replicaCount: 1
@@ -41,6 +41,6 @@ spec:
 
 
   destination:
-    namespace: dandelion-{{ .Values.cardano.network }}
+    namespace: dandelion-{{ .Values.dandelion.cardano.network }}
     server: {{ .Values.spec.destination.server }}
 {{- end }}

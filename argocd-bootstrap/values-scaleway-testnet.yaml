@@ -1,5 +1,5 @@
-provider:
-  name: scaleway
-
-cardano:
-  network: testnet
+dandelion:
+  provider:
+    name: scaleway
+  cardano:
+    network: testnet

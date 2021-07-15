@@ -1,10 +1,8 @@
-provider:
-  name: k3s
-
-cardano:
-  network: testnet
-
 dandelion:
+  provider:
+    name: k3s
+  cardano:
+    network: testnet
   deployIngress: false
   cardano_db_sync:
     enabled: true

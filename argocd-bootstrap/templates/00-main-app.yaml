@@ -15,8 +15,8 @@ spec:
         # This could be used to test dev branches.
         - name: "git.targetRevision"
           value: {{ .Values.git.targetRevision | default "HEAD" }}
-        - name: "cardano.network"
-          value: {{ .Values.cardano.network | default "testnet" }}
+        - name: "dandelion.cardano.network"
+          value: {{ .Values.dandelion.cardano.network | default "testnet" }}
       values: |
         dandelion:
         {{- range $key, $value := $.Values.dandelion }}

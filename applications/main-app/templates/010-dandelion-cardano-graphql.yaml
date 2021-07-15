@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: dandelion-{{ .Values.cardano.network }}-cardano-graphql
+  name: dandelion-{{ .Values.dandelion.cardano.network }}-cardano-graphql
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -12,15 +12,20 @@ spec:
     repoURL: {{ .Values.git.repositoryUrl }}
     targetRevision: {{ .Values.git.targetRevision }}
     path: base/cardano-graphql
+    plugin:
+      name: kustomized-kustomize-network
+      env:
+        - name: CARDANO_NETWORK
+          value: {{ .Values.dandelion.cardano.network }}
 
   destination:
-    namespace: dandelion-{{ .Values.cardano.network }}
+    namespace: dandelion-{{ .Values.dandelion.cardano.network }}
     server: {{ .Values.spec.destination.server }}
 
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: dandelion-{{ .Values.cardano.network }}-cardano-hasura
+  name: dandelion-{{ .Values.dandelion.cardano.network }}-cardano-hasura
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -30,9 +35,14 @@ spec:
     repoURL: {{ .Values.git.repositoryUrl }}
     targetRevision: {{ .Values.git.targetRevision }}
     path: base/cardano-hasura
+    plugin:
+      name: kustomized-kustomize-network
+      env:
+        - name: CARDANO_NETWORK
+          value: {{ .Values.dandelion.cardano.network }}
 
   destination:
-    namespace: dandelion-{{ .Values.cardano.network }}
+    namespace: dandelion-{{ .Values.dandelion.cardano.network }}
     server: {{ .Values.spec.destination.server }}
 
 {{- end }}
