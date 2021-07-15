@@ -4,8 +4,10 @@ dandelion:
   cardano:
     network: testnet
   deployIngress: false
-  monitoring: false
-  logging: false
+  monitoring: 
+    enabled: false
+  logging:
+    enabled: false
   cardano_db_sync:
     enabled: true
   cardano_graphql:
