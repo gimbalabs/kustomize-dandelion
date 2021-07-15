@@ -28,7 +28,7 @@ kubectl get pods -A
 ## Render k8s manifests
 
 ``` 
-OVERLAY=testnet
+OVERLAY=testnet-base
 OUTPUT_FILE=overlays/${OVERLAY}/output.yaml # this will contain the whole deploy manifest
 kustomize build \
   --enable-helm \

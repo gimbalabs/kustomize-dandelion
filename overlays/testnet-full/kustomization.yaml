@@ -24,32 +24,49 @@ resources:
 - resources/ingress.yaml
 
 patches:
+# cardano-node
+- path: ../../base/testnet-patches/cardano-node-configmap.yaml
+  target:
+    kind: ConfigMap
+    name: cardano-node
+- path: ../../base/testnet-patches/cardano-node-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
+- path: ../../base/testnet-patches/cardano-node-deployment-env.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
+- path: ../../base/testnet-patches/cardano-node-deployment-image.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
 # cardano-graphql
-- path: patches/genesis-image.yaml
+- path: ../../base/testnet-patches/genesis-image.yaml
   target:
     kind: Deployment
     name: cardano-graphql
 # cardano-db-sync
-- path: patches/cardano-db-sync-deployment-env.yaml
+- path: ../../base/testnet-patches/cardano-db-sync-deployment-env.yaml
   target:
     kind: StatefulSet
     name: cardano-db-sync
-- path: patches/cardano-db-sync-deployment-image.yaml
+- path: ../../base/testnet-patches/cardano-db-sync-deployment-image.yaml
   target:
     kind: StatefulSet
     name: cardano-db-sync
 # cardano-rosetta
-- path: patches/cardano-rosetta-deployment-image.yaml
+- path: ../../base/testnet-patches/cardano-rosetta-deployment-image.yaml
   target:
     kind: Deployment
     name: cardano-rosetta
 # cardano-submit-api
-- path: patches/cardano-submit-api-deployment-env.yaml
+- path: ../../base/testnet-patches/cardano-submit-api-deployment-env.yaml
   target:
     kind: Deployment
     name: cardano-submit-api
 # ogmios
-- path: patches/ogmios-deployment-env.yaml
+- path: ../../base/testnet-patches/ogmios-deployment-env.yaml
   target:
     kind: Deployment
     name: ogmios
