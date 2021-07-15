@@ -5,7 +5,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.argoAppSuffix }}
   source:
     repoURL: {{ .Values.git.repositoryUrl }}
     targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
