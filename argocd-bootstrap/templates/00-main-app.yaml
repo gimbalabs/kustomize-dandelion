@@ -25,8 +25,8 @@ spec:
         {{- end }}
       valueFiles:
         - values.yaml
-        - values-{{ .Values.provider.name }}.yaml
-        - values-kube-prometheus-stack-{{ .Values.provider.name }}.yaml
+        - values-{{ .Values.dandelion.provider.name }}.yaml
+        - values-kube-prometheus-stack-{{ .Values.dandelion.provider.name }}.yaml
   syncPolicy:
     automated:
       prune: true
