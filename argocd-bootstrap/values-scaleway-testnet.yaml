@@ -1,7 +1,8 @@
 dandelion:
   provider:
     name: scaleway
-  namespaceSuffix: "-v9"
+  #argoAppSuffix: "-v9"
+  #namespaceSuffix: "-v9"
   cardano:
     network: mainnet
   deployIngress: true

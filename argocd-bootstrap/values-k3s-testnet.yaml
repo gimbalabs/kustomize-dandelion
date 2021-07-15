@@ -1,7 +1,8 @@
 dandelion:
   provider:
     name: k3s
-  namespaceSuffix: "-v9"
+  #argoAppSuffix: "-v9"
+  #namespaceSuffix: "-v9"
   cardano:
     network: testnet
   deployIngress: true

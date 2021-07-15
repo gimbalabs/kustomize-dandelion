@@ -5,7 +5,8 @@ git:
 dandelion:
   provider:
     name: null
-  namespaceSuffix: null
+  argoAppSuffix: "-v9-0-0"
+  namespaceSuffix: "-v9-0-0"
   cardano:
     network: null
 
