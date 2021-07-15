@@ -11,7 +11,13 @@ spec:
     repoURL: {{ .Values.git.repositoryUrl }}
     targetRevision: {{ .Values.git.targetRevision }}
     path: overlays/{{ .Values.cardano.network }}-base
+    plugin:
+      env:
+        - name: CARDANO_NETWORK
+          value: {{ .Values.cardano.network }}
 
   destination:
     namespace: dandelion-{{ .Values.cardano.network }}
     server: {{ .Values.spec.destination.server }}
+
+

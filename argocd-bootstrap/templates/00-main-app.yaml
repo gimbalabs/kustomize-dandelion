@@ -6,6 +6,8 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
+  plugin:
+    name: kustomized-kustomize-network
   source:
     repoURL: {{ .Values.git.repositoryUrl }}
     targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
@@ -24,6 +26,7 @@ spec:
             {{ toYaml $value }}
         {{- end }}
       valueFiles:
+        - values.yaml
         - values-{{ .Values.provider.name }}.yaml
         - values-kube-prometheus-stack-{{ .Values.provider.name }}.yaml
   syncPolicy:

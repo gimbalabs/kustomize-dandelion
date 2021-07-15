@@ -1,4 +1,0 @@
-- op: replace
-  path: /spec/template/spec/containers/0/image
-  value:
-    repsistance/cardano-node:iohk-mn-passive-1.26.1-0

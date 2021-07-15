@@ -23,23 +23,5 @@ bases:
 resources:
 - resources/ingress.yaml
 
-patches:
-# cardano-graphql
-- path: patches/genesis-image.yaml
-  target:
-    kind: Deployment
-    name: cardano-graphql
-# cardano-db-sync
-- path: patches/cardano-db-sync-deployment-env.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-db-sync
-- path: patches/cardano-db-sync-deployment-image.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-db-sync
-# cardano-rosetta
-- path: patches/cardano-rosetta-deployment-image.yaml
-  target:
-    kind: Deployment
-    name: cardano-rosetta
+components:
+- ../../base/mainnet-patches
