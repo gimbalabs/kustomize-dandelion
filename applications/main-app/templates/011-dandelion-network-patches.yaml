@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-{{ .Values.cardano.network }}-patches
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision }}
+    path: base/{{ .Values.cardano.network }}-patches
+
+  destination:
+    namespace: dandelion-{{ .Values.cardano.network }}
+    server: {{ .Values.spec.destination.server }}
