@@ -4,18 +4,20 @@ dandelion:
   cardano:
     network: testnet
   deployIngress: false
+  monitoring: false
+  logging: false
   cardano_db_sync:
     enabled: true
   cardano_graphql:
-    enabled: true
+    enabled: false
   cardano_rosetta:
-    enabled: true
+    enabled: false
   metrics_exporter:
-    enabled: true
+    enabled: false
   ogmios:
-    enabled: true
+    enabled: false
   postgrest:
-    enabled: true
+    enabled: false
   cardano_explorer_api:
     enabled: false
   cardano_submit_api:

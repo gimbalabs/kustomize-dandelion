@@ -1,3 +1,4 @@
+{{- if .Values.dandelion.monitoring.enabled -}}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -37,3 +38,5 @@ spec:
   destination:
     namespace: observe
     server: {{ .Values.spec.destination.server }}
+
+{{- end }}
