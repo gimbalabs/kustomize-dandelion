@@ -32,8 +32,27 @@ helm dependency update
 
 helm upgrade \
     --create-namespace \
+    --namespace argocd \
     --install argocd \
-    -f values-scaleway-testnet.yaml -n argocd .
+    -f values-scaleway-testnet.yaml \
+    .
+```
+
+## Deploy more apps
+
+```
+APP_PROVIDER=k3s
+APP_NETWORK=testnet
+APP_SUFFIX=-v9-0-0
+APP_NAME=dandelion-${NETWORK}${APP_SUFFIX}
+APP_REVISION=refactor/add-base-and-multi-node-overlays
+argocd app create dandelion-testnet-v9-0-0 \
+  --repo https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git \
+  --revision ${APP_REVISION} \
+  --path applications/main-app \
+  --helm-set git.targetRevision=${APP_REVISION} \
+  --values-literal-file values-${APP_PROVIDER}-${APP_NETWORK}.yaml \
+  --dest-server https://kubernetes.default.svc
 ```
 
 ## Access ArgoCD

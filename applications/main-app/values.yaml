@@ -11,3 +11,7 @@ dandelion:
   multiNode: false
   cardano:
     network: null
+
+spec:
+  destination:
+    server: https://kubernetes.default.svc
