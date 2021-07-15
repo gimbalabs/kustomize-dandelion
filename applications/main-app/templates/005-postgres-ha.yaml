@@ -7,7 +7,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.argoProjectSuffix }}
   source:
     repoURL: https://charts.bitnami.com/bitnami
     chart: postgresql-ha
