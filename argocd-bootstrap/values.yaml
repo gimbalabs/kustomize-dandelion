@@ -5,6 +5,7 @@ git:
 dandelion:
   provider:
     name: null
+  namespaceSuffix: null
   cardano:
     network: null
 

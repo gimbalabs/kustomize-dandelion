@@ -3,9 +3,9 @@ dandelion:
     name: k3s
   namespaceSuffix: "-v9"
   cardano:
-    network: testnet
+    network: mainnet
   deployIngress: true
-  ingressBaseDomain: testnet.local
+  ingressBaseDomain: mainnet.local
   monitoring: 
     enabled: false
   logging:

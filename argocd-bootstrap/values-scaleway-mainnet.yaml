@@ -1,28 +1,28 @@
 dandelion:
   provider:
-    name: k3s
+    name: scaleway
   namespaceSuffix: "-v9"
   cardano:
-    network: testnet
+    network: mainnet
   deployIngress: true
-  ingressBaseDomain: testnet.local
+  ingressBaseDomain: mainnet.dandelion.link
   monitoring: 
-    enabled: false
+    enabled: true
   logging:
-    enabled: false
+    enabled: true
   cardano_db_sync:
     enabled: true
   cardano_graphql:
-    enabled: false
+    enabled: true
   cardano_rosetta:
-    enabled: false
+    enabled: true
   metrics_exporter:
-    enabled: false
+    enabled: true
   ogmios:
-    enabled: false
+    enabled: true
   postgrest:
-    enabled: false
+    enabled: true
   cardano_explorer_api:
-    enabled: false
+    enabled: true
   cardano_submit_api:
-    enabled: false
+    enabled: true
