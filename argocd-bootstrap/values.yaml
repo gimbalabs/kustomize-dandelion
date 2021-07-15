@@ -34,9 +34,6 @@ argo-cd:
           type: helm
       configManagementPlugins: |
         - name: kustomized-kustomize-network
-          init:
-            command: ["/bin/sh", "-c"]
-            args: ["kustomize build > output.yaml"]
           generate:
             command: ["/bin/sh", "-c"]
-            args: ["pwd 2>&1 && ls -hl 2>&1 && mv output.yaml base/helpers/${CARDANO_NETWORK}-patcher/input.yaml && kustomize build base/helpers/${CARDANO_NETWORK}-patcher"]
+            args: ["kustomize build > ../../base/helpers/${CARDANO_NETWORK}-patcher/input.yaml && kustomize build ../../base/helpers/${CARDANO_NETWORK}-patcher"]
