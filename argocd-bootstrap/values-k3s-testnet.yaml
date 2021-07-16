@@ -10,7 +10,7 @@ dandelion:
   monitoring: 
     enabled: true
   logging:
-    enabled: false
+    enabled: true
   cardano_db_sync:
     enabled: true
   cardano_graphql:
