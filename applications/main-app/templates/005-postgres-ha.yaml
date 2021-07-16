@@ -12,6 +12,7 @@ spec:
     chart: postgresql-ha
     targetRevision: 6.6.6
     helm:
+      releaseName: init0
       parameters:
         # This could be used to test dev branches.
         - name: "git.targetRevision"
