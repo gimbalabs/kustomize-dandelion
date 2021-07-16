@@ -29,6 +29,10 @@ spec:
       selfHeal: true
     syncOptions:
       - ApplyOutOfSyncOnly=true
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+
   destination:
     namespace: argocd
     server: https://kubernetes.default.svc
