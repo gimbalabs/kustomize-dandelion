@@ -3,7 +3,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: dandelion-{{ .Values.dandelion.cardano.network }}-cardano-db-sync
-  namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,7 +18,7 @@ spec:
           value: {{ .Values.dandelion.cardano.network }}
 
   destination:
-    namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
+    namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
     server: {{ .Values.spec.destination.server }}
 
   syncPolicy:

@@ -3,7 +3,6 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: dandelion-{{ .Values.dandelion.cardano.network }}-postgres-ha
-  namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -39,6 +38,6 @@ spec:
           size: 40Gi
 
   destination:
-    namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
+    namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
     server: {{ .Values.spec.destination.server }}
 {{- end }}
