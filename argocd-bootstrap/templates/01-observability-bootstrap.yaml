@@ -15,6 +15,12 @@ spec:
         # This could be used to test dev branches.
         - name: "git.targetRevision"
           value: {{ .Values.git.targetRevision | default "HEAD" }}
+      values: |
+        dandelion:
+        {{- range $key, $value := $.Values.dandelion }}
+          {{ $key }}:
+            {{ toYaml $value }}
+        {{- end }}
       valueFiles:
         - values.yaml
   syncPolicy:
