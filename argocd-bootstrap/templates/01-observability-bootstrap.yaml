@@ -17,7 +17,6 @@ spec:
           value: {{ .Values.git.targetRevision | default "HEAD" }}
       valueFiles:
         - values.yaml
-        - values-kube-prometheus-stack-{{ .Values.dandelion.provider.name }}.yaml
   syncPolicy:
     automated:
       prune: true
