@@ -39,6 +39,6 @@ spec:
           size: 40Gi
 
   destination:
-    namespace: dandelion-{{ .Values.dandelion.cardano.network }}
+    namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
     server: {{ .Values.spec.destination.server }}
 {{- end }}

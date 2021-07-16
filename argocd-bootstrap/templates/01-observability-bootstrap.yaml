@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-observability
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: dandelion-observability
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
+    path: applications/observability
+    helm:
+      parameters:
+        # This could be used to test dev branches.
+        - name: "git.targetRevision"
+          value: {{ .Values.git.targetRevision | default "HEAD" }}
+      valueFiles:
+        - values.yaml
+        - values-kube-prometheus-stack-{{ .Values.dandelion.provider.name }}.yaml
+        - values-kube-prometheus-stack-{{ .Values.dandelion.provider.name }}-{{ .Values.dandelion.cardano.network }}.yaml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc

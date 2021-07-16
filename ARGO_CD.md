@@ -48,6 +48,7 @@ APP_NAME=dandelion-${APP_NETWORK}${APP_SUFFIX}
 APP_REVISION=refactor/add-base-and-multi-node-overlays
 argocd app create \
   ${APP_NAME} \
+  --project ${APP_NAME} \
   --repo https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git \
   --revision ${APP_REVISION} \
   --path applications/main-app \
