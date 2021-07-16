@@ -44,9 +44,10 @@ helm upgrade \
 APP_PROVIDER=k3s
 APP_NETWORK=testnet
 APP_SUFFIX=-v9-0-0
-APP_NAME=dandelion-${NETWORK}${APP_SUFFIX}
+APP_NAME=dandelion-${APP_NETWORK}${APP_SUFFIX}
 APP_REVISION=refactor/add-base-and-multi-node-overlays
-argocd app create dandelion-testnet-v9-0-0 \
+argocd app create \
+  ${APP_NAME} \
   --repo https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git \
   --revision ${APP_REVISION} \
   --path applications/main-app \
