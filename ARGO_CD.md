@@ -54,6 +54,10 @@ argocd app create \
   --path applications/main-app \
   --helm-set git.targetRevision=${APP_REVISION} \
   --values-literal-file values-${APP_PROVIDER}-${APP_NETWORK}.yaml \
+  --sync-policy automated \
+  --sync-option Prune=true \
+  --sync-option selfHeal=true \
+  --sync-option ApplyOutOfSyncOnly=true \
   --dest-server https://kubernetes.default.svc
 ```
 
