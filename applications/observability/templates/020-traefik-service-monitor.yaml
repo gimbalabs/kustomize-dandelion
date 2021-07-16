@@ -1,4 +1,4 @@
-{{- if eq .Values.dandelion.provider "k3s" -}}
+{{- if eq .Values.dandelion.provider.name "k3s" -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
