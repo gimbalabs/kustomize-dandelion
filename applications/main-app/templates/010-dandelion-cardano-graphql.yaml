@@ -22,6 +22,17 @@ spec:
     namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
     server: {{ .Values.spec.destination.server }}
 
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+
+---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -44,5 +55,15 @@ spec:
   destination:
     namespace: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
     server: {{ .Values.spec.destination.server }}
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
 
 {{- end }}
