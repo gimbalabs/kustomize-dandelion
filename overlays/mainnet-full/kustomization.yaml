@@ -14,6 +14,7 @@ bases:
 - ../../base/cardano-hasura
 - ../../base/cardano-rosetta
 - ../../base/cardano-submit-api
+- ../../base/cardano-explorer-api
 - ../../base/metrics-exporter
 - ../../base/ogmios
 - ../../base/postgrest
