@@ -18,7 +18,6 @@ spec:
       valueFiles:
         - values.yaml
         - values-kube-prometheus-stack-{{ .Values.dandelion.provider.name }}.yaml
-        - values-kube-prometheus-stack-{{ .Values.dandelion.provider.name }}-{{ .Values.dandelion.cardano.network }}.yaml
   syncPolicy:
     automated:
       prune: true
