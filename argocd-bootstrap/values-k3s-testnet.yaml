@@ -8,7 +8,7 @@ dandelion:
   deployIngress: true
   ingressBaseDomain: testnet.local
   monitoring: 
-    enabled: false
+    enabled: true
   logging:
     enabled: false
   cardano_db_sync:
