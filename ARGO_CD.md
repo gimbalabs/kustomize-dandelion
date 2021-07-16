@@ -34,15 +34,15 @@ helm upgrade \
     --create-namespace \
     --namespace argocd \
     --install argocd \
-    -f values-scaleway-testnet.yaml \
+    -f values-k3s-testnet.yaml \
     .
 ```
 
-## Deploy more apps
+## Deploy more apps/networks
 
 ```
 APP_PROVIDER=k3s
-APP_NETWORK=testnet
+APP_NETWORK=mainnet
 APP_SUFFIX=-v9-0-0
 APP_NAME=dandelion-${APP_NETWORK}${APP_SUFFIX}
 APP_REVISION=refactor/add-base-and-multi-node-overlays
