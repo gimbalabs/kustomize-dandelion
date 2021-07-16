@@ -18,7 +18,6 @@ bases:
 - ../../base/metrics-exporter
 - ../../base/ogmios
 - ../../base/postgrest
-- ../../base/postgres-ws
 
 resources:
 - resources/ingress.yaml
