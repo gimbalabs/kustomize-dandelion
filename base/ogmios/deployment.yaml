@@ -14,11 +14,23 @@ spec:
       labels:
         io.kompose.service: ogmios
     spec:
+      initContainers:
+      - name: configure
+        command: ["bash", "/configmap/initContainer-entrypoint"]
+        image: repsistance/cardano-node:iohk-mn-passive-1.27.0-0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: ogmios-config
+          mountPath: /config
+        - name: ogmios-configmap
+          mountPath: /configmap
       containers:
       - name: ogmios
         env:
         - name: OGMIOS_NETWORK
           value: "mainnet"
+        - name: NODE_CONFIG_PATH
+          value: "/config/cardano-node-config.json"
         - name: LISTEN_HOST
           value: "0.0.0.0"
         - name: LISTEN_PORT
@@ -27,8 +39,8 @@ spec:
           value: "/node-ipc/node.socket"
         - name: LOG_LEVEL
           value: "Debug"
-        command: ["sh", "-c", "ogmios --node-socket ${NODE_SOCKET_PATH} --host ${LISTEN_HOST} --port ${LISTEN_PORT} --log-level ${LOG_LEVEL}"]
-        image: ktorz/ogmios:v3.1.0
+        command: ["sh", "-xc", "ogmios --node-socket ${NODE_SOCKET_PATH} --host ${LISTEN_HOST} --port ${LISTEN_PORT} --log-level ${LOG_LEVEL} --node-config ${NODE_CONFIG_PATH}"]
+        image: cardanosolutions/ogmios:v3.2.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 1337
@@ -36,6 +48,8 @@ spec:
         volumeMounts:
         - mountPath: /node-ipc
           name: node-ipc
+        - name: ogmios-config
+          mountPath: /config
       - name: socat-socket-server
         image: alpine/socat
         env:
@@ -52,3 +66,9 @@ spec:
       volumes:
       - name: node-ipc
         emptyDir: {}
+      - name: ogmios-config
+        emptyDir: {}
+      - name: ogmios-configmap
+        configMap:
+          name: ogmios-configmap
+

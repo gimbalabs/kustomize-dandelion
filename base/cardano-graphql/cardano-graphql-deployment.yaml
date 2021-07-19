@@ -17,7 +17,7 @@ spec:
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.26.2-0
+        image: repsistance/cardano-node:iohk-mn-passive-1.27.0-0
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: cardano-graphql-config
@@ -38,6 +38,8 @@ spec:
           value: /config/genesis-shelley.json
         - name: HASURA_URI
           value: http://hasura-headless:8080
+        - name: OGMIOS_HOST
+          value: ogmios
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -56,7 +58,7 @@ spec:
           value: /run/secrets/postgres-password/POSTGRES_PASSWORD
         - name: CARDANO_NODE_SOCKET_PATH
           value: /ipc/node.socket
-        image: inputoutput/cardano-graphql:4.0.0
+        image: inputoutput/cardano-graphql:a8c862b6ae16abbd49cfc6fcba06d6a9d8d04245 # 5.0-latest
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
         name: cardano-graphql

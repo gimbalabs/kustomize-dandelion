@@ -3,6 +3,8 @@
   value:
     - name: OGMIOS_NETWORK
       value: testnet
+    - name: NODE_CONFIG_PATH
+      value: "/config/cardano-node-config.json"
     - name: LISTEN_HOST
       value: 0.0.0.0
     - name: LISTEN_PORT
