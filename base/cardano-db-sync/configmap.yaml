@@ -4,6 +4,7 @@ metadata:
   name: cardano-db-sync-configmap
 data:
   create-db-ro-user-entrypoint: |
+    apt update -qq && apt install -y gettext-base
     export PGPASSWORD=${POSTGRES_PASSWORD}
     while [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
     do
@@ -17,7 +18,7 @@ data:
     GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${POSTGRES_USER_RO};
     GRANT USAGE ON SCHEMA public TO ${POSTGRES_USER_RO};
     ALTER ROLE ${POSTGRES_USER_RO} WITH login;
-    ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD "${POSTGRES_PASSWORD_RO}";
+    ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
   liveness-healthcheck: |
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
