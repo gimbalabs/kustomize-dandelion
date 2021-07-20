@@ -21,3 +21,12 @@ patches:
   target:
     kind: Deployment
     name: cardano-rosetta
+# ogmios
+- path: patches/ogmios-deployment-env.yaml
+  target:
+    kind: Deployment
+    name: ogmios
+- path: patches/ogmios-deployment-image.yaml
+  target:
+    kind: Deployment
+    name: ogmios

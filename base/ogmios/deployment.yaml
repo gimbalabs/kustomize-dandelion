@@ -19,6 +19,9 @@ spec:
         command: ["bash", "/configmap/initContainer-entrypoint"]
         image: repsistance/cardano-node:iohk-mn-passive-1.27.0-0
         imagePullPolicy: IfNotPresent
+        env:
+        - name: OGMIOS_NETWORK
+          value: "mainnet"
         volumeMounts:
         - name: ogmios-config
           mountPath: /config
@@ -30,7 +33,7 @@ spec:
         - name: OGMIOS_NETWORK
           value: "mainnet"
         - name: NODE_CONFIG_PATH
-          value: "/config/cardano-node-config.json"
+          value: "/config/network/cardano-node/config.json"
         - name: LISTEN_HOST
           value: "0.0.0.0"
         - name: LISTEN_PORT

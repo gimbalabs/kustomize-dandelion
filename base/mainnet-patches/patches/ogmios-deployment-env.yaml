@@ -2,7 +2,7 @@
   path: /spec/template/spec/containers/0/env
   value:
     - name: OGMIOS_NETWORK
-      value: testnet
+      value: mainnet
     - name: NODE_CONFIG_PATH
       value: "/config/network/cardano-node/config.json"
     - name: LISTEN_HOST
@@ -18,4 +18,4 @@
   path: /spec/template/spec/initContainers/0/env
   value:
     - name: OGMIOS_NETWORK
-      value: testnet
+      value: mainnet
