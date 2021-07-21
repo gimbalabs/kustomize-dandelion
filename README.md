@@ -74,6 +74,7 @@ Besides the services label below, you'll also need to add the corresponding netw
 
 
 | Role            | Services                          | Label                                   | Recommended Node Size (mainnet) | Recommended Node Size (testnet) |
+| --------------- | --------------------------------- |---------------------------------------- | ------------------------------- | ------------------------------- |
 | db-main         | postgres, pgpool, cardano-db-sync | k8s.dandelion.link/role=db-main         | 4vCPU/16gb RAM                  | 2vCPU/2gb RAM                   |
 | cardano-graphql | cardano-graphql                   | k8s.dandelion.link/role=cardano-graphql | 4vCPU/8gb RAM                   | 2vCPU/2gb RAM                   |
 | cardano-node    | cardano-node                      | k8s.dandelion.link/role=cardano-node    | 4vCPU/8gb RAM                   | 2vCPU/2gb RAM                   |
