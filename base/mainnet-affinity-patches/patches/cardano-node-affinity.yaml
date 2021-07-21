@@ -1,0 +1,39 @@
+- op: add
+  path: /spec/template/spec/tolerations
+  value:
+    - key: "k8s.dandelion.link/role"
+      operator: "Equal"
+      value: "cardano-node"
+      effect: "PreferNoSchedule"
+    - key: "k8s.dandelion.link/cardano-network"
+      operator: "Equal"
+      value: "mainnet"
+      effect: "PreferNoSchedule"
+
+- op: add
+  path: /spec/template/spec/affinity
+  value:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: k8s.dandelion.link/role
+            operator: In
+            values:
+            - cardano-node
+          - key: k8s.dandelion.link/cardano-network
+            operator: In
+            values:
+            - mainnet
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: k8s.dandelion.link/role
+              operator: In
+              values:
+              - cardano-node
+            - key: k8s.dandelion.link/cardano-network
+              operator: In
+              values:
+              - mainnet

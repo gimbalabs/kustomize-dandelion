@@ -1,3 +1,4 @@
+{{- if eq .Values.dandelion.provider.name "disabled" -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -13,4 +14,6 @@ spec:
       - kube-system
   selector:
     matchLabels:
-      app: traefik
+      app.kubernetes.io/name: traefik
+
+{{- end }}

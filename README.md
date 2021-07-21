@@ -10,7 +10,16 @@
 There currently are two ways to deploy Dandelion:
 
 * Render and deploy Kustomize manifests
-* Leverage ArgoCD to bootstrap the kubernetes cluster [docs](/ARGO_CD.md)
+* Leverage ArgoCD to perform more advanced deploys. Check the specific docs [here](/ARGO_CD.md)
+
+## Minimum Requirements
+
+| Network | CPU    | RAM   | DISK |
+| ------- | ------ |------ | ---- |
+| Testnet | 4vCPU  | 8GB   | 20gb |
+| Mainnet | 24vCPU | 24GB  | 42gb |
+
+NOTE: vCPUs are recommended to be dedicated for the db synchronization to stay close to blokchain tip.
 
 ## Setup local k3d 
 
@@ -27,8 +36,10 @@ kubectl get pods -A
 
 ## Render k8s manifests
 
+Before directly rendering an overlay, you might want to enable/disable some components (`rosetta`, `postgrest`...) by removing the corresponding `bases` from the `kustomization.yaml` in the overlay dir.
+
 ``` 
-OVERLAY=testnet
+OVERLAY=testnet-full
 OUTPUT_FILE=overlays/${OVERLAY}/output.yaml # this will contain the whole deploy manifest
 kustomize build \
   --enable-helm \
@@ -40,13 +51,13 @@ kustomize build \
 * Using plain `kubectl`:
 ```
 NAMESPACE=dandelion-testnet
-OVERLAY=testnet
+OVERLAY=testnet-full
 kubectl get ns ${NAMESPACE} || kubectl create ns ${NAMESPACE}
 kubectl apply -n ${NAMESPACE} -f overlays/${OVERLAY}/output.yaml
 ```
 * Using convenient [kapp] tool to get diff between local manifests and currently deployed ones in cluster:
 ```
-OVERLAY=testnet
+OVERLAY=testnet-full
 NAMESPACE=dandelion-${OVERLAY}
 APP_NAME=${NAMESPACE}
 kubectl get ns ${NAMESPACE} || kubectl create ns ${NAMESPACE}
@@ -55,6 +66,19 @@ kapp deploy -c \
   --namespace ${NAMESPACE} \
   --file overlays/${OVERLAY}/output.yaml
 ```
+
+## Deploy in multi-node
+
+In order to deploy services into different kubernetes nodes/workers you can use the affinity-ready overlay `${NETWORK}-multi-node` (check patches [here](/base/mainnet-affinity-patches)). We've coupled some services (ie, db ones), decoupled some others (node and graphql) and let others to float around the cluster (any other "consumer" API). 
+Besides the services label below, you'll also need to add the corresponding network label to your workers: `k8s.dandelion.link/cardano-network=mainnet`.
+
+
+| Role            | Services                          | Label                                   | Recommended Node Size (mainnet) | Recommended Node Size (testnet) |
+| db-main         | postgres, pgpool, cardano-db-sync | k8s.dandelion.link/role=db-main         | 4vCPU/16gb RAM                  | 2vCPU/2gb RAM                   |
+| cardano-graphql | cardano-graphql                   | k8s.dandelion.link/role=cardano-graphql | 4vCPU/8gb RAM                   | 2vCPU/2gb RAM                   |
+| cardano-node    | cardano-node                      | k8s.dandelion.link/role=cardano-node    | 4vCPU/8gb RAM                   | 2vCPU/2gb RAM                   |
+| observability   | prometheus, grafana, loki         | k8s.dandelion.link/role=observability   | 2x 2vCPU/2gb RAM                | 2vCPU/2gb RAM                   |
+
 
 ## Usage
 

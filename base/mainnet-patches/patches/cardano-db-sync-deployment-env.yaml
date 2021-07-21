@@ -1,0 +1,33 @@
+- op: replace
+  path: /spec/template/spec/containers/0/env
+  value:
+    - name: EXTENDED
+      value: "true"
+    - name: NETWORK
+      value: mainnet
+    - name: POSTGRES_HOST
+      valueFrom:
+        configMapKeyRef:
+          name: common-env
+          key: POSTGRES_HOST_RW
+    - name: POSTGRES_PORT
+      valueFrom:
+        configMapKeyRef:
+          name: common-env
+          key: POSTGRES_PORT
+    - name: POSTGRES_DB
+      valueFrom:
+        configMapKeyRef:
+          name: common-env
+          key: POSTGRES_DB
+    - name: POSTGRES_USER
+      valueFrom:
+        configMapKeyRef:
+          name: common-env
+          key: POSTGRES_USER
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: init0-postgresql-ha-postgresql
+          key: postgresql-password
+

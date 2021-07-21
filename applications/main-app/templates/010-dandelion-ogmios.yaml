@@ -1,0 +1,34 @@
+{{- if .Values.dandelion.ogmios.enabled -}}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-{{ .Values.dandelion.cardano.network }}-ogmios
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.argoProjectSuffix }}
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision }}
+    path: base/ogmios
+    plugin:
+      name: kustomized-kustomize-network
+      env:
+        - name: CARDANO_NETWORK
+          value: {{ .Values.dandelion.cardano.network }}
+
+  destination:
+    namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
+    server: {{ .Values.spec.destination.server }}
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+
+{{- end }}

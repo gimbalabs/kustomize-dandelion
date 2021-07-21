@@ -1,23 +1,24 @@
+{{- if .Values.dandelion.cardano_db_sync.enabled -}}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: init0
-  namespace: argocd
+  name: dandelion-{{ .Values.dandelion.cardano.network }}-postgres-ha
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: dandelion-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.argoProjectSuffix }}
   source:
     repoURL: https://charts.bitnami.com/bitnami
     chart: postgresql-ha
     targetRevision: 6.6.6
     helm:
+      releaseName: init0
       parameters:
         # This could be used to test dev branches.
         - name: "git.targetRevision"
           value: {{ .Values.git.targetRevision | default "HEAD" }}
-        - name: "cardano.network"
-          value: {{ .Values.cardano.network | default "testnet" }}
+        - name: "dandelion.cardano.network"
+          value: {{ .Values.dandelion.cardano.network | default "testnet" }}
       values: |
         postgresql:
           replicaCount: 1
@@ -37,8 +38,7 @@ spec:
         persistence:
           size: 40Gi
 
-
-
   destination:
-    namespace: dandelion-{{ .Values.cardano.network }}
+    namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
     server: {{ .Values.spec.destination.server }}
+{{- end }}

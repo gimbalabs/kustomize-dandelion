@@ -1,0 +1,141 @@
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: cardano-submit-api
+spec:
+  rules:
+    - host: submit-api.mainnet.local
+      http:
+        paths:
+          - backend:
+              serviceName: cardano-submit-api
+              servicePort: 8091
+            path: /
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - submit-api.mainnet.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: cardano-graphql-api
+spec:
+  rules:
+    - host: graphql-api.mainnet.local
+      http:
+        paths:
+          - backend:
+              serviceName: cardano-graphql
+              servicePort: 3100
+            path: /
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - graphql-api.mainnet.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: chisel-api
+spec:
+  rules:
+    - host: chisel-api.mainnet.local
+      http:
+        paths:
+          - backend:
+              serviceName: chisel-server
+              servicePort: 40000
+            path: /
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - chisel-api.mainnet.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ogmios-api
+spec:
+  rules:
+    - host: ogmios-api.mainnet.local
+      http:
+        paths:
+          - backend:
+              serviceName: ogmios
+              servicePort: 1337
+            path: /
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - ogmios-api.mainnet.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: postgrest-api
+spec:
+  rules:
+    - host: postgrest-api.mainnet.local
+      http:
+        paths:
+          - backend:
+              serviceName: postgrest
+              servicePort: 3000
+            path: /
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - postgrest-api.mainnet.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: rosetta-api
+spec:
+  rules:
+    - host: rosetta-api.mainnet.local
+      http:
+        paths:
+          - backend:
+              serviceName: cardano-rosetta
+              servicePort: 8080
+            path: /
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - rosetta-api.mainnet.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: postgresws-api
+spec:
+  rules:
+    - host: postgresws-api.mainnet.local
+      http:
+        paths:
+          - backend:
+              serviceName: postgres-ws
+              servicePort: 3000
+            path: /
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - postgresws-api.mainnet.local
+    #secretName: local-tls
+#cardano-node-headless                     ClusterIP   None            <none>        30000/TCP   20h
+#hasura-headless                           ClusterIP   None            <none>        8080/TCP    20h

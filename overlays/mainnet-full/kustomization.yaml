@@ -1,0 +1,26 @@
+commonLabels:
+  environment: production
+  cardano_network: mainnet
+  cardano_node_type: haskell
+  project_name: dandelion
+commonAnnotations:
+  note: free-apis!
+
+bases:
+- ../mainnet-base
+- ../../base/helm-charts/postgres-ha
+- ../../base/cardano-db-sync
+- ../../base/cardano-graphql
+- ../../base/cardano-hasura
+- ../../base/cardano-rosetta
+- ../../base/cardano-submit-api
+- ../../base/cardano-explorer-api
+- ../../base/metrics-exporter
+- ../../base/ogmios
+- ../../base/postgrest
+
+resources:
+- resources/ingress.yaml
+
+components:
+- ../../base/mainnet-patches

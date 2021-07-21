@@ -63,9 +63,9 @@ spec:
               key: POSTGRES_DB
         - name: POSTGRES_USER
           valueFrom:
-            configMapKeyRef:
-              name: common-env
-              key: POSTGREST_USER_RO
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -73,9 +73,9 @@ spec:
               key: passwords
         - name: PGRST_DB_ANON_ROLE
           valueFrom:
-            configMapKeyRef:
-              name: common-env
-              key: POSTGREST_USER_RO
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
         image: repsistance/dandelion-metrics-exporter:latest
         imagePullPolicy: Always
         resources: {}

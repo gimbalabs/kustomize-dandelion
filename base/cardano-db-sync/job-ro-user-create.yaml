@@ -11,7 +11,11 @@ spec:
       containers:
       - name: create-db-ro-user
         command: ["bash", "/configmap/create-db-ro-user-entrypoint"]
+        # TODO: add envsubst (gettext-base pkg) depend to this image (or use a diff one)
         image: bitnami/postgresql-repmgr:11.9.0-debian-10-r10
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
         volumeMounts:
         - name: cardano-db-sync-configmap
           mountPath: /configmap
@@ -41,6 +45,16 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
       restartPolicy: Never
       volumes:
       - name: cardano-db-sync-configmap

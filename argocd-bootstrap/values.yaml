@@ -1,11 +1,16 @@
 git:
-  targetRevision: null
+  repositoryUrl: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
+  targetRevision: refactor/add-base-and-multi-node-overlays
 
-provider:
-  name: null
-
-cardano:
-  network: null
+dandelion:
+  provider:
+    name: null
+  argoProjectSuffix: "-v9-0-0"
+  argoAppSuffix: "-v9-0-0"
+  namespaceSuffix: "-v9-0-0"
+  multiNode: false
+  cardano:
+    network: null
 
 argo-cd:
   enabled: true
@@ -29,3 +34,12 @@ argo-cd:
         - url:  https://grafana.github.io/helm-charts
           name: grafana
           type: helm
+      configManagementPlugins: |
+        - name: kustomized-kustomize-network
+          generate:
+            command: ["/bin/sh", "-c"]
+            args: ["kustomize build > ../../base/helpers/${CARDANO_NETWORK}-patcher/input.yaml && kustomize build ../../base/helpers/${CARDANO_NETWORK}-patcher"]
+        - name: kustomized-kustomize-ipfs-cluster
+          generate:
+            command: ["/bin/bash", "-c"]
+            args: ["source baids/99-misc && kustomize-ipfs-generate-ipfs-key"]

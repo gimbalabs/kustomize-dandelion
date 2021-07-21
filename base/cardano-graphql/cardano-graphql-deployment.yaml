@@ -30,6 +30,8 @@ spec:
           value: "true"
         - name: CACHE_ENABLED
           value: "true"
+        - name: LOGGER_MIN_SEVERITY
+          value: "info"
         - name: CARDANO_NODE_CONFIG_PATH
           value: /config/cardano-node-config.json
         - name: GENESIS_FILE_BYRON

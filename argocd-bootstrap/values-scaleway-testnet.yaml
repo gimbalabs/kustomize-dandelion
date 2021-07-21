@@ -1,5 +1,30 @@
-provider:
-  name: scaleway
-
-cardano:
-  network: testnet
+dandelion:
+  provider:
+    name: scaleway
+  #argoAppSuffix: "-v9"
+  #namespaceSuffix: "-v9"
+  #multiNode: true
+  cardano:
+    network: mainnet
+  deployIngress: true
+  ingressBaseDomain: testnet.dandelion.link
+  monitoring: 
+    enabled: true
+  logging:
+    enabled: true
+  cardano_db_sync:
+    enabled: true
+  cardano_graphql:
+    enabled: true
+  cardano_rosetta:
+    enabled: true
+  metrics_exporter:
+    enabled: true
+  ogmios:
+    enabled: true
+  postgrest:
+    enabled: true
+  cardano_explorer_api:
+    enabled: true
+  cardano_submit_api:
+    enabled: true
