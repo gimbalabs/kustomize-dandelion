@@ -2,3 +2,4 @@
 output.yaml
 charts/
 Chart.lock
+*.swp

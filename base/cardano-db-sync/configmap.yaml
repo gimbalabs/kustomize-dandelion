@@ -4,22 +4,24 @@ metadata:
   name: cardano-db-sync-configmap
 data:
   create-db-ro-user-entrypoint: |
+    apt update -qq && apt install -y gettext-base
     export PGPASSWORD=${POSTGRES_PASSWORD}
     while [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
     do
       sleep 1
     done
-    psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /configmap/fixme.sql ${POSTGRES_DB}
-  fixme.sql: |
-    CREATE ROLE postgrest_ro;
-    GRANT CONNECT ON DATABASE cdbs TO postgrest_ro;
-    GRANT SELECT ON ALL TABLES IN SCHEMA public TO postgrest_ro;
-    GRANT USAGE ON SCHEMA public TO postgrest_ro;
-    ALTER ROLE postgrest_ro WITH login;
-    ALTER USER postgrest_ro WITH PASSWORD 'CHANGEME';
-    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO postgrest_ro;
+    envsubst < /configmap/create-ro-user.sql.tpl > /tmp/create-ro-user.sql
+    psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /tmp/create-ro-user.sql ${POSTGRES_DB}
+  create-ro-user.sql.tpl: |
+    CREATE ROLE ${POSTGRES_USER_RO};
+    GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER_RO};
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${POSTGRES_USER_RO};
+    GRANT USAGE ON SCHEMA public TO ${POSTGRES_USER_RO};
+    ALTER ROLE ${POSTGRES_USER_RO} WITH login;
+    ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
   liveness-healthcheck: |
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-    curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" ${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync | tail -n10 | grep -q "insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch"
+    curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" ${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync | tail -n10 | grep -q "insertByronBlock\|insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch"

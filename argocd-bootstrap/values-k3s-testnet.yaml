@@ -1,5 +1,29 @@
-provider:
-  name: k3s
-
-cardano:
-  network: testnet
+dandelion:
+  provider:
+    name: k3s
+  #argoAppSuffix: "-v9"
+  #namespaceSuffix: "-v9"
+  cardano:
+    network: testnet
+  deployIngress: true
+  ingressBaseDomain: testnet.local
+  monitoring: 
+    enabled: false
+  logging:
+    enabled: false
+  cardano_db_sync:
+    enabled: true
+  cardano_graphql:
+    enabled: false
+  cardano_rosetta:
+    enabled: false
+  metrics_exporter:
+    enabled: false
+  ogmios:
+    enabled: false
+  postgrest:
+    enabled: false
+  cardano_explorer_api:
+    enabled: false
+  cardano_submit_api:
+    enabled: false

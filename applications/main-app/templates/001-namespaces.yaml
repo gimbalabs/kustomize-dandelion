@@ -2,9 +2,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: dandelion-mainnet
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: dandelion-testnet
+  name: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}

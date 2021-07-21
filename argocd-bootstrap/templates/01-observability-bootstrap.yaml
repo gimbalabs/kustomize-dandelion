@@ -1,29 +1,38 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: main-app
+  name: dandelion-observability
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: dandelion-observability
   source:
-    repoURL: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
+    repoURL: {{ .Values.git.repositoryUrl }}
     targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
-    path: applications/main-app
+    path: applications/observability
     helm:
       parameters:
         # This could be used to test dev branches.
         - name: "git.targetRevision"
           value: {{ .Values.git.targetRevision | default "HEAD" }}
-        - name: "cardano.network"
-          value: {{ .Values.cardano.network | default "testnet" }}
+      values: |
+        dandelion:
+        {{- range $key, $value := $.Values.dandelion }}
+          {{ $key }}:
+            {{ toYaml $value }}
+        {{- end }}
       valueFiles:
-        - values-{{ .Values.provider.name }}.yaml
-        - values-kube-prometheus-stack-{{ .Values.provider.name }}.yaml
+        - values.yaml
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+
   destination:
     namespace: argocd
     server: https://kubernetes.default.svc

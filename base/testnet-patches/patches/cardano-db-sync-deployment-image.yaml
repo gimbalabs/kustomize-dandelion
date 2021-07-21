@@ -1,0 +1,4 @@
+- op: replace
+  path: /spec/template/spec/containers/0/image
+  value:
+    repsistance/cardano-db-sync:9.0.0

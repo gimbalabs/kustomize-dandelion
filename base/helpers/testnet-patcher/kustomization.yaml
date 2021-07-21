@@ -1,0 +1,5 @@
+resources:
+- input.yaml
+
+components:
+- ../../testnet-patches

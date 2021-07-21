@@ -1,0 +1,5 @@
+bases:
+- ../mainnet-full
+
+components:
+- ../../base/mainnet-affinity-patches

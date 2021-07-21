@@ -1,0 +1,5 @@
+bases:
+- ../testnet-full
+
+components:
+- ../../base/testnet-affinity-patches

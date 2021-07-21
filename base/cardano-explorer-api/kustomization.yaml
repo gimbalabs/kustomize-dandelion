@@ -1,0 +1,3 @@
+resources:
+- cardano-explorer-api-deployment.yaml
+- cardano-explorer-api-service.yaml
