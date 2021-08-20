@@ -5,7 +5,7 @@ dandelion:
   #namespaceSuffix: "-v9"
   #multiNode: true
   cardano:
-    network: mainnet
+    network: testnet
   deployIngress: true
   ingressBaseDomain: testnet.dandelion.link
   monitoring: 
