@@ -1,9 +1,0 @@
-apiVersion: builtin
-kind: HelmChartInflationGenerator
-metadata:
-  name: konga
-chartHome: ./base/helm-charts
-chartName: konga
-releaseName: init0
-releaseNamespace: dandelion-testnet
-values: ./helm-konga-values.yaml

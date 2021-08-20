@@ -24,4 +24,4 @@ data:
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-    curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" ${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync | tail -n10 | grep -q "insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch"
+    curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" ${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync | tail -n10 | grep -q "insertByronBlock\|insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch"

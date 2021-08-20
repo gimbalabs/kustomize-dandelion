@@ -1,13 +1,13 @@
 - op: add
   path: /spec/template/spec/tolerations
   value:
-    - key: "k8s.dandelion.link/cardano-role"
+    - key: "k8s.dandelion.link/role"
       operator: "Equal"
-      value: "cardano-graphql"
+      value: "cardano-node"
       effect: "PreferNoSchedule"
     - key: "k8s.dandelion.link/cardano-network"
       operator: "Equal"
-      value: "mainnet"
+      value: "testnet"
       effect: "PreferNoSchedule"
 
 - op: add
@@ -17,23 +17,23 @@
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
         - matchExpressions:
-          - key: k8s.dandelion.link/cardano-role
+          - key: k8s.dandelion.link/role
             operator: In
             values:
-            - cardano-graphql
+            - cardano-node
           - key: k8s.dandelion.link/cardano-network
             operator: In
             values:
-            - mainnet
+            - testnet
       preferredDuringSchedulingIgnoredDuringExecution:
       - weight: 100
         preference:
           matchExpressions:
-            - key: k8s.dandelion.link/cardano-role
+            - key: k8s.dandelion.link/role
               operator: In
               values:
-              - cardano-graphql
+              - cardano-node
             - key: k8s.dandelion.link/cardano-network
               operator: In
               values:
-              - mainnet
+              - testnet

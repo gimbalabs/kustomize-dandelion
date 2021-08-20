@@ -1,43 +1,5 @@
-namespace: dandelion-testnet
-commonLabels:
-  environment: production
-  cardano_network: testnet
-  cardano_node_type: haskell
-  project_name: dandelion
-commonAnnotations:
-  note: free-apis!
-
 bases:
 - ../testnet-full
 
-patches:
-# anti-affinity (avoid cardano-node and graphql to share nodes with postgres/db-sync)
-- path: patches/anti-affinity.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-node
-- path: patches/anti-affinity.yaml
-  target:
-    kind: Deployment
-    name: cardano-graphql
-# affinity (per worker pool affinity)
-- path: patches/cardano-graphql-affinity.yaml
-  target:
-    kind: Deployment
-    name: cardano-graphql
-- path: patches/cardano-node-affinity.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-node
-- path: patches/db-main-affinity.yaml
-  target:
-    kind: StatefulSet
-    name: init0-postgresql-ha-postgresql
-- path: patches/db-main-affinity.yaml
-  target:
-    kind: Deployment
-    name: init0-postgresql-ha-pgpool
-- path: patches/db-main-affinity.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-db-sync
+components:
+- ../../base/testnet-affinity-patches

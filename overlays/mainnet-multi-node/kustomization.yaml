@@ -1,34 +1,5 @@
 bases:
-- ../mainnet
+- ../mainnet-full
 
-patches:
-# anti-affinity (avoid cardano-node and graphql to share nodes with postgres/db-sync)
-- path: patches/anti-affinity.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-node
-- path: patches/anti-affinity.yaml
-  target:
-    kind: Deployment
-    name: cardano-graphql
-# affinity (per worker pool affinity)
-- path: patches/cardano-graphql-affinity.yaml
-  target:
-    kind: Deployment
-    name: cardano-graphql
-- path: patches/cardano-node-affinity.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-node
-- path: patches/db-affinity.yaml
-  target:
-    kind: StatefulSet
-    name: init0-postgresql-ha-postgresql
-- path: patches/db-affinity.yaml
-  target:
-    kind: Deployment
-    name: init0-postgresql-ha-pgpool
-- path: patches/db-affinity.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-db-sync
+components:
+- ../../base/mainnet-affinity-patches

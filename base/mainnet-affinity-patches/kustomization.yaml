@@ -1,16 +1,17 @@
-namespace: dandelion-mainnet
-commonLabels:
-  environment: production
-  cardano_network: mainnet
-  cardano_node_type: haskell
-  project_name: dandelion
-commonAnnotations:
-  note: free-apis!
-
-bases:
-- ../mainnet-full
+apiVersion: kustomize.config.k8s.io/v1alpha1  # <-- Component notation
+kind: Component
 
 patches:
+# network affinity
+- path: patches/base-affinity.yaml
+  target:
+    kind: StatefulSet
+- path: patches/base-affinity.yaml
+  target:
+    kind: Deployment
+- path: patches/base-affinity.yaml
+  target:
+    kind: DaemonSet
 # anti-affinity (avoid cardano-node and graphql to share nodes with postgres/db-sync)
 - path: patches/anti-affinity.yaml
   target:
