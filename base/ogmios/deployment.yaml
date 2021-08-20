@@ -43,7 +43,7 @@ spec:
         - name: LOG_LEVEL
           value: "Debug"
         command: ["sh", "-xc", "ogmios --node-socket ${NODE_SOCKET_PATH} --host ${LISTEN_HOST} --port ${LISTEN_PORT} --log-level ${LOG_LEVEL} --node-config ${NODE_CONFIG_PATH}"]
-        image: cardanosolutions/ogmios:v3.2.0
+        image: cardanosolutions/ogmios:v4.0.0-beta.6-mainnet
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 1337

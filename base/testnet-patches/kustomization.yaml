@@ -48,3 +48,7 @@ patches:
   target:
     kind: Deployment
     name: ogmios
+- path: patches/ogmios-deployment-image.yaml
+  target:
+    kind: Deployment
+    name: ogmios
