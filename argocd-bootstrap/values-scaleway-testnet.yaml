@@ -6,6 +6,11 @@ dandelion:
   #multiNode: true
   cardano:
     network: testnet
+  db:
+    adminPassword: "CHANGEME"
+    roPassword: "CHANGEME"
+    repmgrPassword: "CHANGEME"
+    diskSize: "10Gi"
   deployIngress: true
   ingressBaseDomain: testnet.dandelion.link
   monitoring: 
