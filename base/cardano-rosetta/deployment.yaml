@@ -63,7 +63,7 @@ spec:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_DB
-        image: inputoutput/cardano-rosetta:1.2.1
+        image: inputoutput/cardano-rosetta:1.3.0
         command: ['sh', '-c', 'DB_CONNECTION_STRING="postgresql://${POSTGRES_USER}:${POSTGRES_PASS}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}" node /cardano-rosetta-server/dist/src/server/index.js']
         imagePullPolicy: IfNotPresent
         name: cardano-rosetta
