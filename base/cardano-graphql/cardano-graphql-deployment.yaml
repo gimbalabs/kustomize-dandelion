@@ -42,6 +42,8 @@ spec:
           value: http://hasura-headless:8080
         - name: OGMIOS_HOST
           value: ogmios
+        - name: OGMIOS_PORT
+          value: "1337"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -69,12 +71,12 @@ spec:
         readinessProbe:
           tcpSocket:
             port: 3100
-          initialDelaySeconds: 15
+          initialDelaySeconds: 120
           periodSeconds: 15
         livenessProbe:
           tcpSocket:
             port: 3100
-          initialDelaySeconds: 15
+          initialDelaySeconds: 120
           periodSeconds: 15
         resources: {}
         volumeMounts:
