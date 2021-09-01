@@ -1,9 +1,9 @@
+git:
+  targetRevision: update/sboard-dandelion
+
 dandelion:
   provider:
     name: scaleway
-  #argoAppSuffix: "-v9"
-  #namespaceSuffix: "-v9"
-  #multiNode: true
   cardano:
     network: mainnet
   db:
@@ -12,8 +12,9 @@ dandelion:
     repmgrPassword: "CHANGEME"
     diskSize: "80Gi"
   deployIngress: true
-  ingressBaseDomain: mainnet.dandelion.link
-  monitoring: 
+  ingressBaseDomain: mainnet.dandelion.stakeboard.net
+  multiNode: true
+  monitoring:
     enabled: true
   logging:
     enabled: true
@@ -22,14 +23,14 @@ dandelion:
   cardano_graphql:
     enabled: true
   cardano_rosetta:
-    enabled: true
+    enabled: false
   metrics_exporter:
     enabled: true
   ogmios:
-    enabled: true
+    enabled: false
   postgrest:
-    enabled: true
+    enabled: false
   cardano_explorer_api:
-    enabled: true
+    enabled: false
   cardano_submit_api:
     enabled: true
