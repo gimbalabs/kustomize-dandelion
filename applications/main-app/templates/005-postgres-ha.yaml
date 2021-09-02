@@ -65,27 +65,6 @@ spec:
                   operator: In
                   values:
                   - mainnet
-            preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: k8s.dandelion.link/role
-                    operator: In
-                    values:
-                    - db-main
-                  - key: k8s.dandelion.link/cardano-network
-                    operator: In
-                    values:
-                    - mainnet
-        tolerations:
-          - key: "k8s.dandelion.link/role"
-            operator: "Equal"
-            value: "db-main"
-            effect: "PreferNoSchedule"
-          - key: "k8s.dandelion.link/cardano-network"
-            operator: "Equal"
-            value: "mainnet"
-            effect: "PreferNoSchedule"
 
   destination:
     namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
