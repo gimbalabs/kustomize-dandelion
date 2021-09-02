@@ -1,6 +1,13 @@
 git:
   targetRevision: update/sboard-dandelion
 
+argo-cd:
+  server:
+    ingress:
+      enabled: true
+      hosts:
+        - argocd.stakeboard.net
+
 dandelion:
   provider:
     name: scaleway
