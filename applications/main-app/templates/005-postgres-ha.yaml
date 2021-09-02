@@ -52,13 +52,40 @@ spec:
           enabled: true
         persistence:
           size: {{ .Values.dandelion.db.diskSize | default "10Gi" }}
-    plugin:
-      name: kustomized-kustomize-network
-      env:
-        - name: CARDANO_NETWORK
-          value: {{ .Values.dandelion.cardano.network }}
-        - name: MULTI_NODE_AFFINITY
-          value: {{ .Values.dandelion.multiNode | quote }}
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: k8s.dandelion.link/role
+                  operator: In
+                  values:
+                  - db-main
+                - key: k8s.dandelion.link/cardano-network
+                  operator: In
+                  values:
+                  - mainnet
+            preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: k8s.dandelion.link/role
+                    operator: In
+                    values:
+                    - db-main
+                  - key: k8s.dandelion.link/cardano-network
+                    operator: In
+                    values:
+                    - mainnet
+        tolerations:
+          - key: "k8s.dandelion.link/role"
+            operator: "Equal"
+            value: "db-main"
+            effect: "PreferNoSchedule"
+          - key: "k8s.dandelion.link/cardano-network"
+            operator: "Equal"
+            value: "mainnet"
+            effect: "PreferNoSchedule"
 
   destination:
     namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
