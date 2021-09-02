@@ -37,6 +37,7 @@ spec:
                   port:
                     number: 3100
             path: /
+            pathType: Prefix
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
     - hosts:
