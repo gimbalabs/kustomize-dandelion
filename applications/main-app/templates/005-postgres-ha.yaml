@@ -52,19 +52,6 @@ spec:
           enabled: true
         persistence:
           size: {{ .Values.dandelion.db.diskSize | default "10Gi" }}
-        affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-              - matchExpressions:
-                - key: k8s.dandelion.link/role
-                  operator: In
-                  values:
-                  - db-main
-                - key: k8s.dandelion.link/cardano-network
-                  operator: In
-                  values:
-                  - mainnet
 
   destination:
     namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
