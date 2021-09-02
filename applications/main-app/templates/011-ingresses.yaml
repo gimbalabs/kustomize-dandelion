@@ -21,27 +21,25 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: cardano-graphql-api
   namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: "graphql-api.stakeboard.net"
+    - host: "graphql-api.{{ .Values.dandelion.ingressBaseDomain }}"
       http:
         paths:
           - backend:
-                service:
-                  name: cardano-graphql
-                  port:
-                    number: 3100
+              serviceName: cardano-graphql
+              servicePort: 3100
             path: /
-            pathType: Prefix
   # This section is only required if TLS is to be enabled for the Ingress
-#  tls:
-#    - hosts:
-#        - "graphql-api.{{ .Values.dandelion.ingressBaseDomain }}"
+  tls:
+    - hosts:
+        - "graphql-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      #secretName: local-tls
 
 ---
 apiVersion: networking.k8s.io/v1beta1
