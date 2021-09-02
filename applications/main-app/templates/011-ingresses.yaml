@@ -28,7 +28,7 @@ metadata:
   namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: "graphql-api.{{ .Values.dandelion.ingressBaseDomain }}"
+    - host: "graphql-api.stakeboard.net"
       http:
         paths:
           - backend:
