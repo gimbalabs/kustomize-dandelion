@@ -3,7 +3,7 @@
   value:
     - key: "k8s.dandelion.link/role"
       operator: "Equal"
-      value: "cardano-graphql"
+      value: "single-node"
       effect: "PreferNoSchedule"
     - key: "k8s.dandelion.link/cardano-network"
       operator: "Equal"
@@ -20,7 +20,7 @@
           - key: k8s.dandelion.link/role
             operator: In
             values:
-            - cardano-graphql
+            - single-node
           - key: k8s.dandelion.link/cardano-network
             operator: In
             values:
@@ -32,7 +32,7 @@
             - key: k8s.dandelion.link/role
               operator: In
               values:
-              - cardano-graphql
+              - single-node
             - key: k8s.dandelion.link/cardano-network
               operator: In
               values:

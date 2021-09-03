@@ -17,7 +17,7 @@ spec:
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.27.0-0
+        image: repsistance/cardano-node:iohk-mn-passive-1.29.0-2
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: cardano-graphql-config
@@ -33,11 +33,7 @@ spec:
         - name: LOGGER_MIN_SEVERITY
           value: "info"
         - name: CARDANO_NODE_CONFIG_PATH
-          value: /config/cardano-node-config.json
-        - name: GENESIS_FILE_BYRON
-          value: /config/genesis-byron.json
-        - name: GENESIS_FILE_SHELLEY
-          value: /config/genesis-shelley.json
+          value: /opt/cardano/cnode/files/cardano-node-config.json
         - name: HASURA_URI
           value: http://hasura-headless:8080
         - name: OGMIOS_HOST
@@ -62,7 +58,7 @@ spec:
           value: /run/secrets/postgres-password/POSTGRES_PASSWORD
         - name: CARDANO_NODE_SOCKET_PATH
           value: /ipc/node.socket
-        image: inputoutput/cardano-graphql:5.0.0
+        image: inputoutput/cardano-graphql:5.1.0-mainnet-mainnet-mainnet-mainnet
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
         name: cardano-graphql
@@ -81,7 +77,7 @@ spec:
         resources: {}
         volumeMounts:
         - name: cardano-graphql-config
-          mountPath: /config
+          mountPath: /opt/cardano/cnode/files
         - name: common-env
           mountPath: /run/secrets/common-env
           readOnly: true
