@@ -42,7 +42,7 @@ spec:
           value: /configmap/topology.json
         - name: CNODE_CONFIG_FILE
           value: /configmap/config.json
-        image: repsistance/cardano-node:iohk-mn-passive-1.29.0-1
+        image: repsistance/cardano-node:iohk-mn-passive-1.29.0-2
         imagePullPolicy: IfNotPresent
         resources: {}
         terminationMessagePath: /dev/termination-log

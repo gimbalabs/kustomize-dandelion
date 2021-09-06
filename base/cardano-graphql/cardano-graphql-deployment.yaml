@@ -58,7 +58,7 @@ spec:
           value: /run/secrets/postgres-password/POSTGRES_PASSWORD
         - name: CARDANO_NODE_SOCKET_PATH
           value: /ipc/node.socket
-        image: inputoutput/cardano-graphql:5.1.0-mainnet-mainnet-mainnet-mainnet
+        image: inputoutput/cardano-graphql:5.1.0-mainnet
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
         name: cardano-graphql

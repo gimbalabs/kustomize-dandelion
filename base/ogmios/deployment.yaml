@@ -17,7 +17,7 @@ spec:
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.29.0-1
+        image: repsistance/cardano-node:iohk-mn-passive-1.29.0-2
         imagePullPolicy: IfNotPresent
         env:
         - name: OGMIOS_NETWORK
