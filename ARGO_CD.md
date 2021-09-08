@@ -28,14 +28,14 @@ Before bootstrapping ArgoCD, it's necessary to fetch all Helm dependencies.
 APP_PROVIDER=k3s
 APP_NETWORK=testnet
 
-ARGOCD_PASSWORD=CH4NG3@M3
-ARGOCD_HASHED_PASSWORD=$(htpasswd -nbBC 10 null $ARGOCD_PASSWORD | sed 's|null:\(.*\)|\1|g')
+export ARGOCD_PASSWORD=CH4NG3@M3
+export ARGOCD_HASHED_PASSWORD=$(htpasswd -nbBC 10 null $ARGOCD_PASSWORD | sed 's|null:\(.*\)|\1|g')
 
 
 cd argocd-bootstrap
 
-helm dependency build
 helm dependency update
+helm dependency build
 
 helm upgrade \
     --create-namespace \

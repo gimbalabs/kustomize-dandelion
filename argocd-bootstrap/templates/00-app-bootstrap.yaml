@@ -19,10 +19,9 @@ spec:
           value: {{ .Values.dandelion.cardano.network | default "testnet" }}
       values: |
         dandelion:
-        {{- range $key, $value := $.Values.dandelion }}
-          {{ $key }}: 
-            {{ toYaml $value }}
-        {{- end }}
+        {{ with .Values.dandelion }}
+{{ toYaml . | indent 10 }}
+        {{ end }}
       valueFiles:
         - values.yaml
         - values-{{ .Values.dandelion.provider.name }}.yaml

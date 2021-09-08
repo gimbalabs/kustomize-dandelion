@@ -17,10 +17,10 @@ spec:
           value: {{ .Values.git.targetRevision | default "HEAD" }}
       values: |
         dandelion:
-        {{- range $key, $value := $.Values.dandelion }}
-          {{ $key }}:
-            {{ toYaml $value }}
-        {{- end }}
+        ## Config coming from values file depending on the k8s deployment
+        {{ with .Values.dandelion }}
+{{ toYaml . | indent 10 }}
+        {{ end }}
       valueFiles:
         - values.yaml
   syncPolicy:

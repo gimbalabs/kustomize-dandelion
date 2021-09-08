@@ -9,7 +9,7 @@
       valueFrom:
         configMapKeyRef:
           name: common-env
-          key: POSTGRES_HOST_RW
+          key: POSTGRES_HOST
     - name: POSTGRES_PORT
       valueFrom:
         configMapKeyRef:
