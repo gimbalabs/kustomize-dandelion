@@ -7,6 +7,6 @@ data:
     rm -rf /config/lost+found
 
     cp /opt/cardano/cnode/files/config.json /config/cardano-node-config.json
-    cp /opt/cardano/cnode/files/byron-genesis.json /config/genesis-byron.json
-    cp /opt/cardano/cnode/files/genesis.json /config/genesis-shelley.json
-    cp /opt/cardano/cnode/files/alonzo-genesis.json /config/genesis-alonzo.json
+    cp /opt/cardano/cnode/files/byron-genesis.json /config/
+    cp /opt/cardano/cnode/files/genesis.json /config/
+    cp /opt/cardano/cnode/files/alonzo-genesis.json /config/
