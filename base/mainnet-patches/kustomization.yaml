@@ -30,3 +30,9 @@ patches:
   target:
     kind: Deployment
     name: cardano-rosetta
+# postgres-ha
+- path: patches/postgres-ha-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: init0-postgresql-ha-postgresql
+

@@ -37,6 +37,14 @@ patches:
   target:
     kind: StatefulSet
     name: cardano-db-sync
+- path: patches/cardano-db-sync-deployment-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+- path: patches/cardano-db-sync-initContainer.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
 # cardano-rosetta
 - path: patches/cardano-rosetta-deployment-image.yaml
   target:
@@ -56,3 +64,8 @@ patches:
   target:
     kind: Deployment
     name: ogmios
+# postgres-ha
+- path: patches/postgres-ha-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: init0-postgresql-ha-postgresql
