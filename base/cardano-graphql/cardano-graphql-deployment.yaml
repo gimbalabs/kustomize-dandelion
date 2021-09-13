@@ -67,12 +67,12 @@ spec:
         readinessProbe:
           tcpSocket:
             port: 3100
-          initialDelaySeconds: 120
+          initialDelaySeconds: 1200
           periodSeconds: 15
         livenessProbe:
           tcpSocket:
             port: 3100
-          initialDelaySeconds: 120
+          initialDelaySeconds: 1200
           periodSeconds: 15
         resources: {}
         volumeMounts:
