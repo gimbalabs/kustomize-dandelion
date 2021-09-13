@@ -20,8 +20,45 @@ data:
     ALTER ROLE ${POSTGRES_USER_RO} WITH login;
     ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
+  initContainer-entrypoint: |
+    if [ "${RESTORE_SNAPSHOT}" == "true" ]
+    then
+      export PGPASSWORD=${POSTGRES_PASSWORD}
+      until psql -P pager=off -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB}
+      do
+        sleep 1
+      done
+      if [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
+      then
+        cd /aux-data-dir
+        curl -Lo snapshot.tgz ${DB_SYNC_SNAPSHOT_URL}
+        SHA_URL=$(echo ${DB_SYNC_SNAPSHOT_URL} | sed 's|$|.sha256sum|')
+        curl -Lo snapshot.tgz.sha256sum.tmp ${SHA_URL}
+        echo $(awk '{print $1}' snapshot.tgz.sha256sum.tmp) snapshot.tgz > snapshot.tgz.sha256sum
+        sha256sum --check --status < snapshot.tgz.sha256sum
+        if [ $? -eq 0 ]
+        then
+          tar -zxf snapshot.tgz
+          psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f *sql ${POSTGRES_DB}
+          rm -f *sql
+          mv *state* /db-sync-statedir
+          chown -R root: /db-sync-statedir
+        else
+          echo "[!] sha256sum check error for ${DB_SYNC_SNAPSHOT_URL}"
+          exit 1
+        fi
+      fi
+    fi
+
   liveness-healthcheck: |
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-    curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" ${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync | tail -n10 | grep -q "insertByronBlock\|insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch"
+    SINCE_SECONDS=300
+    curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync&sinceSeconds=${SINCE_SECONDS}" > /tmp/db-sync-log-tail 
+    if [ $? -ne 0 ]
+    then
+      exit 0
+    else
+      tail -n10 /tmp/db-sync-log-tail | grep -q "insertByronBlock\|insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch\|Starting epoch"
+    fi

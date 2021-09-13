@@ -17,6 +17,61 @@ spec:
       labels:
         io.kompose.service: cardano-db-sync
     spec:
+      initContainers:
+      - name: configure
+        command: ["bash", "-x", "/configmap/initContainer-entrypoint"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        image: bitnami/postgresql-repmgr:11.9.0-debian-10-r10
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: RESTORE_SNAPSHOT
+          value: "false"
+        - name: DB_SYNC_SNAPSHOT_URL
+          value: "https://update-cardano-mainnet.iohk.io/cardano-db-sync/11/db-sync-snapshot-schema-11-block-6214864-x86_64.tgz"
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST_RW
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-postgresql
+              key: postgresql-password
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
+        volumeMounts:
+        - name: cardano-db-sync-configmap
+          mountPath: /configmap
+        - name: dbsync-statedir
+          mountPath: /db-sync-statedir
+        - name: node-ipc
+          mountPath: /aux-data-dir
       containers:
       - name: cardano-db-sync
         env:
@@ -49,13 +104,17 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
-        image: repsistance/cardano-db-sync:11.0.0
+        image: gimbalabs/cardano-db-sync:11.0.0
+        workingDir: /var/lib/cdbsync
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
         resources: {}
         volumeMounts:
         - name: node-ipc
           mountPath: /node-ipc
+        # workaround for missing tmp dir :facepalm:
+        - name: node-ipc
+          mountPath: /tmp
         - name: common-env
           mountPath: /run/secrets/common-env
           readOnly: true
