@@ -39,10 +39,27 @@ data:
         if [ $? -eq 0 ]
         then
           tar -zxf snapshot.tgz
+          SNAPSHOT_EPOCH=$(ls *state* | awk -F '-' '{print $3}' | sed 's|.lstate||g')
           psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f *sql ${POSTGRES_DB}
           rm -f *sql
           mv *state* /db-sync-statedir
           chown -R root: /db-sync-statedir
+          socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
+          cardano-cli query tip --mainnet
+          if [ $? -eq 0 ]
+          then
+            MAGIC_ARG="--mainnet"
+          else
+            MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g')"
+          fi
+          echo "[+] Waiting for cardano-node to reach tip..."
+          while [ ${SNAPSHOT_EPOCH} -lt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
+          do
+            sleep 1
+            echo .
+          done
+          pkill -9 -f socat
+          exit 0
         else
           echo "[!] sha256sum check error for ${DB_SYNC_SNAPSHOT_URL}"
           exit 1

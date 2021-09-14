@@ -23,13 +23,21 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0
-        image: bitnami/postgresql-repmgr:11.9.0-debian-10-r10
+        image: gimbalabs/cardano-db-sync:init-container
         imagePullPolicy: IfNotPresent
         env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: "cardano-node-headless"
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        - name: SOCAT_TIMEOUT
+          value: "3600"
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
         - name: RESTORE_SNAPSHOT
-          value: "false"
+          value: "true"
         - name: DB_SYNC_SNAPSHOT_URL
-          value: "https://update-cardano-mainnet.iohk.io/cardano-db-sync/11/db-sync-snapshot-schema-11-block-6214864-x86_64.tgz"
+          value: "https://update-cardano-mainnet.iohk.io/cardano-db-sync/11/db-sync-snapshot-schema-11-block-6236059-x86_64.tgz"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -72,6 +80,8 @@ spec:
           mountPath: /db-sync-statedir
         - name: node-ipc
           mountPath: /aux-data-dir
+        - name: node-ipc
+          mountPath: /ipc
       containers:
       - name: cardano-db-sync
         env:
