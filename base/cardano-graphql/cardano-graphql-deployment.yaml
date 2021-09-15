@@ -14,6 +14,7 @@ spec:
       labels:
         io.kompose.service: cardano-graphql
     spec:
+      strategy: Recreate
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
@@ -64,15 +65,10 @@ spec:
         name: cardano-graphql
         ports:
         - containerPort: 3100
-        readinessProbe:
-          tcpSocket:
-            port: 3100
-          initialDelaySeconds: 1200
-          periodSeconds: 15
         livenessProbe:
           tcpSocket:
             port: 3100
-          initialDelaySeconds: 1200
+          initialDelaySeconds: 1800
           periodSeconds: 15
         resources: {}
         volumeMounts:
