@@ -30,4 +30,3 @@
         secretKeyRef:
           name: init0-postgresql-ha-postgresql
           key: postgresql-password
-

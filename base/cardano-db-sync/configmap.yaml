@@ -40,7 +40,7 @@ data:
     then
       MAGIC_ARG="--mainnet"
     else
-      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g')"
+      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
     fi
 
     if [ "${RESTORE_SNAPSHOT}" == "true" ]
@@ -80,7 +80,8 @@ data:
       fi
     fi
 
-    pkill -9 -f socat
+    pkill -f socat && sleep 1
+    rm -f ${CARDANO_NODE_SOCKET_PATH}
 
   liveness-healthcheck: |
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces

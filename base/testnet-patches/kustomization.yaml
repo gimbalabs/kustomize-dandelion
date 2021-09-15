@@ -41,7 +41,7 @@ patches:
   target:
     kind: StatefulSet
     name: cardano-db-sync
-- path: patches/cardano-db-sync-initContainer.yaml
+- path: patches/cardano-db-sync-deployment-initContainer-env.yaml
   target:
     kind: StatefulSet
     name: cardano-db-sync
