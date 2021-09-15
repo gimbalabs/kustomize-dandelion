@@ -67,7 +67,7 @@ data:
           mv *state* /db-sync-statedir
           chown -R root: /db-sync-statedir
           echo -n "[+] Waiting for cardano-node to reach tip..."
-          while [ ${SNAPSHOT_EPOCH} -lt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
+          while [ ${SNAPSHOT_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
           do
             sleep 1
             echo -n .
