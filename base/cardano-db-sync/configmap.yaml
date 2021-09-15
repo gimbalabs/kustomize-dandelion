@@ -69,7 +69,7 @@ data:
           echo -n "[+] Waiting for cardano-node to reach tip..."
           while [ ${SNAPSHOT_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
           do
-            sleep 1
+            sleep 60
             echo -n .
           done
           exit 0
