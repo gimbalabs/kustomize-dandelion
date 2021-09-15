@@ -29,7 +29,7 @@ data:
     done
 
     socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
-    while ! `cardano-cli query tip --mainnet | grep -q "epoch\|NodeToClientVersionData"`
+    while ! `cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
     do
       sleep 1
       echo -n .
