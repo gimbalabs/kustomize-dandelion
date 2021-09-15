@@ -21,6 +21,28 @@ data:
     ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
   initContainer-entrypoint: |
+    echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
+    while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
+    while ! `cardano-cli query tip --mainnet | grep -q "epoch\|NodeToClientVersionData"`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    cardano-cli query tip --mainnet
+    if [ $? -eq 0 ]
+    then
+      MAGIC_ARG="--mainnet"
+    else
+      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g')"
+    fi
+
     if [ "${RESTORE_SNAPSHOT}" == "true" ]
     then
       export PGPASSWORD=${POSTGRES_PASSWORD}
@@ -44,21 +66,12 @@ data:
           rm -f *sql
           mv *state* /db-sync-statedir
           chown -R root: /db-sync-statedir
-          socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
-          cardano-cli query tip --mainnet
-          if [ $? -eq 0 ]
-          then
-            MAGIC_ARG="--mainnet"
-          else
-            MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g')"
-          fi
-          echo "[+] Waiting for cardano-node to reach tip..."
+          echo -n "[+] Waiting for cardano-node to reach tip..."
           while [ ${SNAPSHOT_EPOCH} -lt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
           do
             sleep 1
-            echo .
+            echo -n .
           done
-          pkill -9 -f socat
           exit 0
         else
           echo "[!] sha256sum check error for ${DB_SYNC_SNAPSHOT_URL}"
@@ -66,6 +79,8 @@ data:
         fi
       fi
     fi
+
+    pkill -9 -f socat
 
   liveness-healthcheck: |
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
