@@ -6,6 +6,8 @@ metadata:
   name: cardano-graphql
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       io.kompose.service: cardano-graphql
@@ -14,8 +16,6 @@ spec:
       labels:
         io.kompose.service: cardano-graphql
     spec:
-      strategy:
-        type: Recreate
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
