@@ -24,9 +24,6 @@ spec:
     server: {{ .Values.spec.destination.server }}
 
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - ApplyOutOfSyncOnly=true
       - CreateNamespace=true
@@ -57,9 +54,6 @@ spec:
     server: {{ .Values.spec.destination.server }}
 
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - ApplyOutOfSyncOnly=true
       - CreateNamespace=true
