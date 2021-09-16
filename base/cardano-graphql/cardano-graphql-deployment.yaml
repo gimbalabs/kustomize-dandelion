@@ -14,7 +14,8 @@ spec:
       labels:
         io.kompose.service: cardano-graphql
     spec:
-      updateStrategy: Recreate
+      strategy:
+        type: Recreate
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
