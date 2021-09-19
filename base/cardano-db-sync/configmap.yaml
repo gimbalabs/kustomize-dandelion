@@ -21,6 +21,13 @@ data:
     ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
   initContainer-entrypoint: |
+    function finish_socat {
+      pkill -f socat && sleep 1
+      rm -f ${CARDANO_NODE_SOCKET_PATH}
+    }
+
+    trap finish_socat EXIT
+
     echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
     while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
     do
@@ -79,9 +86,6 @@ data:
         fi
       fi
     fi
-
-    pkill -f socat && sleep 1
-    rm -f ${CARDANO_NODE_SOCKET_PATH}
 
   liveness-healthcheck: |
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
