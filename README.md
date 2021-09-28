@@ -48,14 +48,16 @@ kustomize build \
 
 ## Deploy k8s manifests
 
-* Using plain `kubectl`:
+You have two options:
+
+* A) Using plain `kubectl`:
 ```
 NAMESPACE=dandelion-testnet
 OVERLAY=testnet-full
 kubectl get ns ${NAMESPACE} || kubectl create ns ${NAMESPACE}
 kubectl apply -n ${NAMESPACE} -f overlays/${OVERLAY}/output.yaml
 ```
-* Using convenient [kapp] tool to get diff between local manifests and currently deployed ones in cluster:
+* B) Using convenient [kapp] tool to get diff between local manifests and currently deployed ones in cluster:
 ```
 OVERLAY=testnet-full
 NAMESPACE=dandelion-${OVERLAY}
