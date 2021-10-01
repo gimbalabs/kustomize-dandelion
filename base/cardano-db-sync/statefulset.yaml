@@ -114,7 +114,7 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
-        image: gimbalabs/cardano-db-sync:11.0.0
+        image: gimbalabs/cardano-db-sync:11.0.4
         workingDir: /var/lib/cdbsync
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
