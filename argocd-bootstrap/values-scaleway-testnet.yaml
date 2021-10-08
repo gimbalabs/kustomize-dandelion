@@ -5,7 +5,12 @@ dandelion:
   #namespaceSuffix: "-v9"
   #multiNode: true
   cardano:
-    network: mainnet
+    network: testnet
+  db:
+    adminPassword: "CHANGEME"
+    roPassword: "CHANGEME"
+    repmgrPassword: "CHANGEME"
+    diskSize: "10Gi"
   deployIngress: true
   ingressBaseDomain: testnet.dandelion.link
   monitoring: 

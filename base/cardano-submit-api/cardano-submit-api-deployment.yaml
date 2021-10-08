@@ -43,5 +43,3 @@ spec:
       volumes:
       - name: node-ipc
         emptyDir: {}
-
-# TODO: setup-public-exposure

@@ -24,12 +24,24 @@ patches:
   target:
     kind: Deployment
     name: cardano-graphql
+- path: patches/cardano-graphql-deployment-image.yaml
+  target:
+    kind: Deployment
+    name: cardano-graphql
 # cardano-db-sync
 - path: patches/cardano-db-sync-deployment-env.yaml
   target:
     kind: StatefulSet
     name: cardano-db-sync
 - path: patches/cardano-db-sync-deployment-image.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+- path: patches/cardano-db-sync-deployment-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+- path: patches/cardano-db-sync-deployment-initContainer-env.yaml
   target:
     kind: StatefulSet
     name: cardano-db-sync
@@ -48,3 +60,12 @@ patches:
   target:
     kind: Deployment
     name: ogmios
+- path: patches/ogmios-deployment-image.yaml
+  target:
+    kind: Deployment
+    name: ogmios
+# postgres-ha
+- path: patches/postgres-ha-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: init0-postgresql-ha-postgresql

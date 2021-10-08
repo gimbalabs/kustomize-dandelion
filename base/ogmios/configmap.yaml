@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ogmios-configmap
+data:
+  initContainer-entrypoint: |
+    rm -rf /config/lost+found
+
+    #cp /opt/cardano/cnode/files/config.json /config/cardano-node-config.json
+    #cp /opt/cardano/cnode/files/genesis.json /config/genesis-shelley.json
+    #cp /opt/cardano/cnode/files/byron-genesis.json /config/genesis-byron.json
+
+    if [ ! -e /config/network/cardano-node/config.json ]
+    then
+      mkdir -p /config/network/cardano-node
+      case "${OGMIOS_NETWORK}" in
+        "mainnet")
+          curl -sLo /config/network/cardano-node/config.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/mainnet/cardano-node/config.json
+        ;;
+        "testnet")
+          curl -sLo /config/network/cardano-node/config.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/testnet/cardano-node/config.json
+        ;;
+      esac
+    fi
+    if [ ! -e /config/network/genesis/genesis.json ]
+    then
+      mkdir -p /config/network/genesis
+      case "${OGMIOS_NETWORK}" in
+        "mainnet")
+          curl -sLo /config/network/genesis/byron.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/mainnet/genesis/byron.json
+          curl -sLo /config/network/genesis/shelley.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/mainnet/genesis/shelley.json
+          curl -sLo /config/network/genesis/alonzo.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/mainnet/genesis/alonzo.json
+        ;;
+        "testnet")
+          curl -sLo /config/network/genesis/byron.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/testnet/genesis/byron.json
+          curl -sLo /config/network/genesis/shelley.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/testnet/genesis/shelley.json
+          curl -sLo /config/network/genesis/alonzo.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/testnet/genesis/alonzo.json
+        ;;
+      esac
+    fi

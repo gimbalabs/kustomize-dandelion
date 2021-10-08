@@ -28,21 +28,28 @@ Before bootstrapping ArgoCD, it's necessary to fetch all Helm dependencies.
 APP_PROVIDER=k3s
 APP_NETWORK=testnet
 
+export ARGOCD_PASSWORD=CH4NG3@M3
+export ARGOCD_HASHED_PASSWORD=$(htpasswd -nbBC 10 null $ARGOCD_PASSWORD | sed 's|null:\(.*\)|\1|g')
+
+
 cd argocd-bootstrap
 
-helm dependency build
 helm dependency update
+helm dependency build
 
 helm upgrade \
     --create-namespace \
     --namespace argocd \
     --install argocd \
+    --set "argo-cd.configs.secret.argocdServerAdminPassword=${ARGOCD_HASHED_PASSWORD}" \
+    --set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
     -f values-${APP_PROVIDER}-${APP_NETWORK}.yaml \
     .
 ```
 
 ## Deploy more apps/networks
 
+* Install `argocd` cli tool and login into the server
 * Set environment:
 ```
 APP_PROVIDER=k3s
@@ -87,14 +94,18 @@ kubectl port-forward -n argocd ${POD_NAME} 8080:8080
 Alternatively you can set the password at bootstrap time. Steps are:
 
 1. Generate a new password
-2. Use the bcrypt to hash the password. You can use this convenience [website](https://www.browserling.com/tools/bcrypt) to do so.
+2. Use the bcrypt to hash the password. You can use this convenience [website](https://www.browserling.com/tools/bcrypt) to do so or `htpasswd` from the `apache2-utils` suite like this:
+```
+ARGOCD_PASSWORD=CH4NG3@M3
+ARGOCD_HASHED_PASSWORD=$(htpasswd -nbBC 10 null $ARGOCD_PASSWORD | sed 's|null:\(.*\)|\1|g')
+```
 3. Specify the password when bootstrapping the cluster by replacing `argo-cd.configs.secret.argocdServerAdminPassword` hash:
 ```bash
 helm upgrade \
     --create-namespace \
     --namespace argocd \
     --install argocd \
-    --set "argo-cd.configs.secret.argocdServerAdminPassword"='$2a$10$GG4A3RZ.TNYNGoVoPmlCrOO9PgwVy9lTN3s.mhfLO1JwzCALpuoLW' \
+    --set "argo-cd.configs.secret.argocdServerAdminPassword=${ARGOCD_HASHED_PASSWORD}" \
     --set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
     -f values-${APP_PROVIDER}-${APP_NETWORK}.yaml \
     .

@@ -1,4 +1,0 @@
-- op: replace
-  path: /spec/template/spec/containers/0/image
-  value:
-    inputoutput/cardano-rosetta:1.2.1

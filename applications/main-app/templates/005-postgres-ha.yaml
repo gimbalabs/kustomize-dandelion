@@ -23,20 +23,35 @@ spec:
         postgresql:
           replicaCount: 1
           updateStrategyType: OnDelete
-          password: cdbsCHANGEME
+          password: {{ .Values.dandelion.db.adminPassword | default "cdbsCHANGEME" }}
           database: cdbs
           usePasswordFile: false
           repmgrUsername: repmgruser
-          repmgrPassword: repmgrpassword
+          repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
           repmgrDatabase: repmgrdatabase
+          {{- if .Values.dandelion.multiNode }}
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: k8s.dandelion.link/role
+                    operator: In
+                    values:
+                    - db-main
+                  - key: k8s.dandelion.link/cardano-network
+                    operator: In
+                    values:
+                    - mainnet
+          {{- end }}
         pgpool:
           customUsers:
             usernames: 'postgrest_ro'
-            passwords: 'CHANGEME'
+            passwords: {{ .Values.dandelion.db.roPassword | default "CHANGEME" }}
         metrics:
           enabled: true
         persistence:
-          size: 40Gi
+          size: {{ .Values.dandelion.db.diskSize | default "10Gi" }}
 
   destination:
     namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}

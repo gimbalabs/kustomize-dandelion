@@ -20,8 +20,78 @@ data:
     ALTER ROLE ${POSTGRES_USER_RO} WITH login;
     ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
+  initContainer-entrypoint: |
+    echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
+    while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
+    while ! `cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    cardano-cli query tip --mainnet
+    if [ $? -eq 0 ]
+    then
+      MAGIC_ARG="--mainnet"
+    else
+      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
+    fi
+
+    if [ "${RESTORE_SNAPSHOT}" == "true" ]
+    then
+      export PGPASSWORD=${POSTGRES_PASSWORD}
+      until psql -P pager=off -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB}
+      do
+        sleep 1
+      done
+      if [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
+      then
+        cd /aux-data-dir
+        curl -Lo snapshot.tgz ${DB_SYNC_SNAPSHOT_URL}
+        SHA_URL=$(echo ${DB_SYNC_SNAPSHOT_URL} | sed 's|$|.sha256sum|')
+        curl -Lo snapshot.tgz.sha256sum.tmp ${SHA_URL}
+        echo $(awk '{print $1}' snapshot.tgz.sha256sum.tmp) snapshot.tgz > snapshot.tgz.sha256sum
+        sha256sum --check --status < snapshot.tgz.sha256sum
+        if [ $? -eq 0 ]
+        then
+          tar -zxf snapshot.tgz
+          SNAPSHOT_EPOCH=$(ls *state* | awk -F '-' '{print $3}' | sed 's|.lstate||g')
+          psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f *sql ${POSTGRES_DB}
+          rm -f *sql
+          mv *state* /db-sync-statedir
+          chown -R root: /db-sync-statedir
+          echo -n "[+] Waiting for cardano-node to reach tip..."
+          while [ ${SNAPSHOT_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
+          do
+            sleep 60
+            echo -n .
+          done
+          exit 0
+        else
+          echo "[!] sha256sum check error for ${DB_SYNC_SNAPSHOT_URL}"
+          exit 1
+        fi
+      fi
+    fi
+
+    pkill -f socat && sleep 1
+    rm -f ${CARDANO_NODE_SOCKET_PATH}
+
   liveness-healthcheck: |
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-    curl -sSk -H "Authorization: Bearer $KUBE_TOKEN" ${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync | tail -n10 | grep -q "insertByronBlock\|insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch"
+    SINCE_SECONDS=300
+    curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync&sinceSeconds=${SINCE_SECONDS}" > /tmp/db-sync-log-tail 
+    if [ $? -ne 0 ]
+    then
+      exit 0
+    else
+      tail -n10 /tmp/db-sync-log-tail | grep -q "insertByronBlock\|insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch\|Starting epoch"
+    fi

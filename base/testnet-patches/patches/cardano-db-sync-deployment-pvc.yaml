@@ -2,7 +2,7 @@
   path: /spec/volumeClaimTemplates
   value:
   - metadata:
-      name: node-db
+      name: dbsync-statedir
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:

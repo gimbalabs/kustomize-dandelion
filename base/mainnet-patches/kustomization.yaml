@@ -2,6 +2,11 @@ apiVersion: kustomize.config.k8s.io/v1alpha1  # <-- Component notation
 kind: Component
 
 patches:
+# cardano-node
+- path: patches/cardano-node-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
 # cardano-graphql
 - path: patches/genesis-image.yaml
   target:
@@ -16,8 +21,18 @@ patches:
   target:
     kind: StatefulSet
     name: cardano-db-sync
+- path: patches/cardano-db-sync-deployment-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
 # cardano-rosetta
 - path: patches/cardano-rosetta-deployment-image.yaml
   target:
     kind: Deployment
     name: cardano-rosetta
+# postgres-ha
+- path: patches/postgres-ha-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: init0-postgresql-ha-postgresql
+

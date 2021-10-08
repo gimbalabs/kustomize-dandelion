@@ -17,13 +17,27 @@ spec:
       labels:
         io.kompose.service: cardano-db-sync
     spec:
-      containers:
-      - name: cardano-db-sync
+      initContainers:
+      - name: configure
+        command: ["bash", "-x", "/configmap/initContainer-entrypoint"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        image: gimbalabs/cardano-db-sync:init-container
+        imagePullPolicy: IfNotPresent
         env:
-        - name: EXTENDED
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: "cardano-node-headless"
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        - name: SOCAT_TIMEOUT
+          value: "3600"
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
+        - name: RESTORE_SNAPSHOT
           value: "true"
-        - name: NETWORK
-          value: mainnet
+        - name: DB_SYNC_SNAPSHOT_URL
+          value: "https://update-cardano-mainnet.iohk.io/cardano-db-sync/11/db-sync-snapshot-schema-11-block-6236059-x86_64.tgz"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -49,13 +63,68 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
-        image: repsistance/cardano-db-sync:9.0.0
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
+        volumeMounts:
+        - name: cardano-db-sync-configmap
+          mountPath: /configmap
+        - name: dbsync-statedir
+          mountPath: /db-sync-statedir
+        - name: node-ipc
+          mountPath: /aux-data-dir
+        - name: node-ipc
+          mountPath: /ipc
+      containers:
+      - name: cardano-db-sync
+        env:
+        - name: EXTENDED
+          value: "true"
+        - name: NETWORK
+          value: mainnet
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-postgresql
+              key: postgresql-password
+        image: gimbalabs/cardano-db-sync:11.0.4
+        workingDir: /var/lib/cdbsync
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
         resources: {}
         volumeMounts:
         - name: node-ipc
           mountPath: /node-ipc
+        # workaround for missing tmp dir :facepalm:
+        - name: node-ipc
+          mountPath: /tmp
         - name: common-env
           mountPath: /run/secrets/common-env
           readOnly: true
@@ -66,12 +135,12 @@ spec:
           mountPath: /var/lib/cdbsync
         - name: cardano-db-sync-configmap
           mountPath: /configmap
-        livenessProbe:
-          exec:
-            command: ["bash", "/configmap/liveness-healthcheck"]
-          initialDelaySeconds: 300
-          periodSeconds: 20
-          timeoutSeconds: 10
+#        livenessProbe:
+#          exec:
+#            command: ["bash", "/configmap/liveness-healthcheck"]
+#          initialDelaySeconds: 600
+#          periodSeconds: 60
+#          timeoutSeconds: 120
       - name: socat-socket-server
         image: alpine/socat
         env:
@@ -114,4 +183,4 @@ spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
-          storage: 1Gi
+          storage: 4Gi

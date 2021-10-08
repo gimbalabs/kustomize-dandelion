@@ -3,6 +3,8 @@
   value:
     - name: OGMIOS_NETWORK
       value: testnet
+    - name: NODE_CONFIG_PATH
+      value: "/config/network/cardano-node/config.json"
     - name: LISTEN_HOST
       value: 0.0.0.0
     - name: LISTEN_PORT
@@ -11,3 +13,9 @@
       value: /node-ipc/node.socket
     - name: LOG_LEVEL
       value: Debug
+
+- op: replace
+  path: /spec/template/spec/initContainers/0/env
+  value:
+    - name: OGMIOS_NETWORK
+      value: testnet

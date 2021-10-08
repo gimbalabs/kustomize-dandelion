@@ -11,4 +11,5 @@
       value: /data/db
     - name: CNODE_TOPOLOGY_FILE
       value: /configmap/topology.json
-
+    - name: CNODE_CONFIG_FILE
+      value: /configmap/config.json

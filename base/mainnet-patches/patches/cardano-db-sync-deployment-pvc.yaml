@@ -1,0 +1,10 @@
+- op: replace
+  path: /spec/volumeClaimTemplates
+  value:
+  - metadata:
+      name: dbsync-statedir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi

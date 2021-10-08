@@ -1,11 +1,13 @@
+{{ if .Values.dandelion.deployIngress }}
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: cardano-submit-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: submit-api.mainnet.local
+    - host: "submit-api.{{ .Values.dandelion.ingressBaseDomain }}"
       http:
         paths:
           - backend:
@@ -14,18 +16,19 @@ spec:
             path: /
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
-  - hosts:
-    - submit-api.mainnet.local
-    #secretName: local-tls
+    - hosts:
+        - "submit-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      #secretName: local-tls
 
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: cardano-graphql-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: graphql-api.mainnet.local
+    - host: "graphql-api.{{ .Values.dandelion.ingressBaseDomain }}"
       http:
         paths:
           - backend:
@@ -34,18 +37,19 @@ spec:
             path: /
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
-  - hosts:
-    - graphql-api.mainnet.local
-    #secretName: local-tls
+    - hosts:
+        - "graphql-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      #secretName: local-tls
 
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: chisel-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: chisel-api.mainnet.local
+    - host: "chisel-api.{{ .Values.dandelion.ingressBaseDomain }}"
       http:
         paths:
           - backend:
@@ -54,18 +58,19 @@ spec:
             path: /
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
-  - hosts:
-    - chisel-api.mainnet.local
-    #secretName: local-tls
+    - hosts:
+        - "chisel-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      #secretName: local-tls
 
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: ogmios-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: ogmios-api.mainnet.local
+    - host: "ogmios-api.{{ .Values.dandelion.ingressBaseDomain }}"
       http:
         paths:
           - backend:
@@ -74,18 +79,19 @@ spec:
             path: /
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
-  - hosts:
-    - ogmios-api.mainnet.local
-    #secretName: local-tls
+    - hosts:
+        - "ogmios-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      #secretName: local-tls
 
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: postgrest-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: postgrest-api.mainnet.local
+    - host: "postgrest-api.{{ .Values.dandelion.ingressBaseDomain }}"
       http:
         paths:
           - backend:
@@ -94,18 +100,19 @@ spec:
             path: /
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
-  - hosts:
-    - postgrest-api.mainnet.local
-    #secretName: local-tls
+    - hosts:
+        - "postgrest-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      #secretName: local-tls
 
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: rosetta-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: rosetta-api.mainnet.local
+    - host: "rosetta-api.{{ .Values.dandelion.ingressBaseDomain }}"
       http:
         paths:
           - backend:
@@ -114,18 +121,19 @@ spec:
             path: /
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
-  - hosts:
-    - rosetta-api.mainnet.local
-    #secretName: local-tls
+    - hosts:
+        - "rosetta-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      #secretName: local-tls
 
 ---
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: postgresws-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
   rules:
-    - host: postgresws-api.mainnet.local
+    - host: "postgresws-api.{{ .Values.dandelion.ingressBaseDomain }}"
       http:
         paths:
           - backend:
@@ -134,8 +142,6 @@ spec:
             path: /
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
-  - hosts:
-    - postgresws-api.mainnet.local
-    #secretName: local-tls
-#cardano-node-headless                     ClusterIP   None            <none>        30000/TCP   20h
-#hasura-headless                           ClusterIP   None            <none>        8080/TCP    20h
+    - hosts:
+        - "postgresws-api.{{ .Values.dandelion.ingressBaseDomain }}"
+{{ end }}

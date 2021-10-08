@@ -1,16 +1,21 @@
 git:
   repositoryUrl: https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git
-  targetRevision: refactor/add-base-and-multi-node-overlays
+  targetRevision: HEAD
 
 dandelion:
   provider:
     name: null
-  argoProjectSuffix: "-v9-0-0"
-  argoAppSuffix: "-v9-0-0"
-  namespaceSuffix: "-v9-0-0"
+  argoProjectSuffix: "-v10-0-1"
+  argoAppSuffix: "-v10-0-1"
+  namespaceSuffix: "-v10-0-1"
   multiNode: false
   cardano:
     network: null
+  db:
+    adminPassword: "CHANGEME"
+    roPassword: "CHANGEME"
+    repmgrPassword: "CHANGEME"
+    diskSize: "60Gi"
 
 argo-cd:
   enabled: true
@@ -34,12 +39,22 @@ argo-cd:
         - url:  https://grafana.github.io/helm-charts
           name: grafana
           type: helm
+        - url:  https://helm.traefik.io/traefik
+          name: traefik
+          type: helm
       configManagementPlugins: |
         - name: kustomized-kustomize-network
           generate:
             command: ["/bin/sh", "-c"]
-            args: ["kustomize build > ../../base/helpers/${CARDANO_NETWORK}-patcher/input.yaml && kustomize build ../../base/helpers/${CARDANO_NETWORK}-patcher"]
+            args: ["if [ ${MULTI_NODE_AFFINITY} ]; then echo \"- ../../${CARDANO_NETWORK}-affinity-patches\" >> ../../base/helpers/${CARDANO_NETWORK}-patcher/kustomization.yaml; fi ; kustomize build > ../../base/helpers/${CARDANO_NETWORK}-patcher/input.yaml && kustomize build ../../base/helpers/${CARDANO_NETWORK}-patcher"]
         - name: kustomized-kustomize-ipfs-cluster
           generate:
             command: ["/bin/bash", "-c"]
             args: ["source baids/99-misc && kustomize-ipfs-generate-ipfs-key"]
+
+      resource.customizations: |
+        networking.k8s.io/Ingress:
+          health.lua: |
+            hs = {}
+            hs.status = "Healthy"
+            return hs
