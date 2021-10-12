@@ -34,6 +34,19 @@ kubectl config use-context k3d-${CLUSTER_NAME}
 kubectl get pods -A
 ```
 
+## Clone this repository
+
+* For example, using command line like this:
+```
+mkdir Projects
+cd Projects
+git clone https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion
+```
+* Then enter the directory and execute the following steps from there:
+```
+cd kustomize-dandelion
+```
+
 ## Render k8s manifests
 
 Before directly rendering an overlay, you might want to enable/disable some components (`rosetta`, `postgrest`...) by removing the corresponding `bases` from the `kustomization.yaml` in the overlay dir.
