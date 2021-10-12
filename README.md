@@ -1,6 +1,6 @@
 # Requirements
 
-* Kubernetes. For local k8s development environment, we encourage you to use [k3s]/[k3d] lightweight k8s distro.
+* Kubernetes. For local k8s development environment, we encourage you to use [k3s]/[k3d] lightweight k8s distro. Note you need to use k8s <=v1.21 by the moment. 
 * [kubectl]
 * [Kustomize] (v4.1.x)
 * [helm]
@@ -38,6 +38,8 @@ kubectl get pods -A
 
 Before directly rendering an overlay, you might want to enable/disable some components (`rosetta`, `postgrest`...) by removing the corresponding `bases` from the `kustomization.yaml` in the overlay dir.
 
+You need to execute this from the top dir of this git repository:
+ 
 ``` 
 OVERLAY=testnet-full
 OUTPUT_FILE=overlays/${OVERLAY}/output.yaml # this will contain the whole deploy manifest
@@ -48,7 +50,7 @@ kustomize build \
 
 ## Deploy k8s manifests
 
-You have two options:
+You need to execute one of these options from the top dir of this git repository:
 
 * A) Using plain `kubectl`:
 ```
