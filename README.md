@@ -55,7 +55,7 @@ You have two options:
 NAMESPACE=dandelion-testnet
 OVERLAY=testnet-full
 kubectl get ns ${NAMESPACE} || kubectl create ns ${NAMESPACE}
-kubectl apply -n ${NAMESPACE} -f overlays/${OVERLAY}/output.yaml
+kubectl apply --validate=false -n ${NAMESPACE} -f overlays/${OVERLAY}/output.yaml
 ```
 * B) Using convenient [kapp] tool to get diff between local manifests and currently deployed ones in cluster:
 ```
