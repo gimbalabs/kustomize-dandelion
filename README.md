@@ -14,10 +14,10 @@ There currently are two ways to deploy Dandelion:
 
 ## Minimum Requirements
 
-| Network | CPU    | RAM   | DISK |
-| ------- | ------ |------ | ---- |
-| Testnet | 4vCPU  | 8GB   | 20gb |
-| Mainnet | 24vCPU | 24GB  | 42gb |
+| Network | CPU    | RAM   | DISK  |
+| ------- | ------ |------ | ----  |
+| Testnet | 4vCPU  | 8GB   | 30gb  |
+| Mainnet | 24vCPU | 24GB  | 120gb |
 
 NOTE: vCPUs are recommended to be dedicated for the db synchronization to stay close to blokchain tip.
 
