@@ -4,6 +4,7 @@
 * [kubectl]
 * [Kustomize] (greater than v4.1)
 * [helm]
+* `bash`. If you are using MacOS to deploy using k3d on docker, you will find problems using `zsh` as shell while copy pasting :)
 
 # Local deployment
 
