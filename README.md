@@ -139,6 +139,11 @@ kubectl port-forward -n dandelion-testnet init0-postgresql-ha-postgresql-0 5432:
 NAMESPACE=dandelion-testnet
 kubectl delete ns ${NAMESPACE}
 ```
+* Or even destroy the whole cluster
+```
+CLUSTER_NAME=dandelion-testnet
+k3d delete cluster ${CLUSTER_NAME}
+```
 * Just [deploy again :)](#deploy-k8s-manifests)
 
 [docker]: https://docs.docker.com/engine/install/
