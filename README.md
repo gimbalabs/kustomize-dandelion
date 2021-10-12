@@ -2,7 +2,7 @@
 
 * Kubernetes. For local k8s development environment, we encourage you to use [k3s]/[k3d] lightweight k8s distro. Note you need to use k8s <=v1.21 by the moment. 
 * [kubectl]
-* [Kustomize] (v4.1.x)
+* [Kustomize] (greater than v4.1)
 * [helm]
 
 # Local deployment
