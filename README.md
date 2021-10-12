@@ -141,7 +141,7 @@ kubectl delete ns ${NAMESPACE}
 
 [docker]: https://docs.docker.com/engine/install/
 [kustomize]: https://kustomize.io
-[kubectl]: https://kubernetes.io/es/docs/tasks/tools/install-kubectl
+[kubectl]: https://kubernetes.io/docs/tasks/tools/#kubectl
 [k3d]: https://k3d.io
 [k3s]: https://k3s.io
 [kapp]: https://github.com/vmware-tanzu/carvel-kapp
