@@ -26,7 +26,7 @@ NOTE: vCPUs are recommended to be dedicated for the db synchronization to stay c
 
 Assuming you are already running [docker] locally, and have both, [kubectl] and [k3d] binaries installed, you could create a `k3d` cluster like this (customize port mappings if you feel to):
 ```
-CLUSTER_NAME=dandelion-testnet
+CLUSTER_NAME=dandelion-dev
 k3d cluster create \
   -p "80:80@loadbalancer" \
   -p "443:443@loadbalancer" \
