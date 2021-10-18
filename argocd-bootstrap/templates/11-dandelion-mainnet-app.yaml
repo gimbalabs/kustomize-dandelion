@@ -17,6 +17,14 @@ spec:
           value: {{ .Values.git.targetRevision | default "HEAD" }}
         - name: "dandelion.cardano.network"
           value: "mainnet"
+        - name: "dandelion.provider.name"
+          value: {{ .Values.dandelion.provider.name }}
+        - name: "dandelion.argoProjectSuffix"
+          value: {{ .Values.dandelion.argoProjectSuffix }}
+        - name: "dandelion.argoAppSuffix"
+          value: {{ .Values.dandelion.argoAppSuffix }}
+        - name: "dandelion.namespaceSuffix"
+          value: {{ .Values.dandelion.namespaceSuffix }}
       values: |
         dandelion:
         {{ with .Values.dandelion.mainnet }}
