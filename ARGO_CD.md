@@ -43,7 +43,8 @@ helm upgrade \
     --install argocd \
     --set "argo-cd.configs.secret.argocdServerAdminPassword=${ARGOCD_HASHED_PASSWORD}" \
     --set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
-    -f values-${APP_PROVIDER}-${APP_NETWORK}.yaml \
+    -f values-scaleway.yaml \
+    -f values-scaleway-mainnet-stakeboard.yaml \
     .
 ```
 
