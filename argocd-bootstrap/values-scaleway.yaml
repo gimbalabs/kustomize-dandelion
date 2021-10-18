@@ -42,7 +42,7 @@ dandelion:
       repmgrPassword: "CHANGEME"
       diskSize: "150Gi"
     deployIngress: true
-    ingressBaseDomain: mainnet.dandelion.link
+    ingressBaseDomain: testnet.dandelion.link
     monitoring:
       enabled: true
     logging:
