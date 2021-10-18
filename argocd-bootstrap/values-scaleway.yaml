@@ -1,0 +1,65 @@
+dandelion:
+  provider:
+    name: scaleway
+  #argoAppSuffix: "-v9"
+  #namespaceSuffix: "-v9"
+  #multiNode: true
+  mainnet:
+    enabled: true
+    multiNode: true
+    db:
+      adminPassword: "CHANGEME"
+      roPassword: "CHANGEME"
+      repmgrPassword: "CHANGEME"
+      diskSize: "150Gi"
+    deployIngress: true
+    ingressBaseDomain: mainnet.dandelion.link
+    monitoring:
+      enabled: true
+    logging:
+      enabled: true
+    cardano_db_sync:
+      enabled: true
+    cardano_graphql:
+      enabled: true
+    cardano_rosetta:
+      enabled: true
+    metrics_exporter:
+      enabled: true
+    ogmios:
+      enabled: true
+    postgrest:
+      enabled: true
+    cardano_explorer_api:
+      enabled: true
+    cardano_submit_api:
+      enabled: true
+  testnet:
+    enabled: true
+    db:
+      adminPassword: "CHANGEME"
+      roPassword: "CHANGEME"
+      repmgrPassword: "CHANGEME"
+      diskSize: "150Gi"
+    deployIngress: true
+    ingressBaseDomain: mainnet.dandelion.link
+    monitoring:
+      enabled: true
+    logging:
+      enabled: true
+    cardano_db_sync:
+      enabled: true
+    cardano_graphql:
+      enabled: true
+    cardano_rosetta:
+      enabled: true
+    metrics_exporter:
+      enabled: true
+    ogmios:
+      enabled: true
+    postgrest:
+      enabled: true
+    cardano_explorer_api:
+      enabled: true
+    cardano_submit_api:
+      enabled: true
