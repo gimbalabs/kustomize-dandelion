@@ -3,14 +3,13 @@ dandelion:
     name: scaleway
   #argoAppSuffix: "-v9"
   #namespaceSuffix: "-v9"
-  #multiNode: true
+  multiNode: true
   monitoring:
     enabled: true
   logging:
     enabled: true
   mainnet:
     enabled: false
-    multiNode: true
     db:
       adminPassword: "CHANGEME"
       roPassword: "CHANGEME"
@@ -40,7 +39,7 @@ dandelion:
       adminPassword: "CHANGEME"
       roPassword: "CHANGEME"
       repmgrPassword: "CHANGEME"
-      diskSize: "150Gi"
+      diskSize: "20Gi"
     deployIngress: true
     ingressBaseDomain: testnet.dandelion.link
     cardano_db_sync:
