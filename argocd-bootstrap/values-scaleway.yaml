@@ -4,8 +4,12 @@ dandelion:
   #argoAppSuffix: "-v9"
   #namespaceSuffix: "-v9"
   #multiNode: true
-  mainnet:
+  monitoring:
     enabled: true
+  logging:
+    enabled: true
+  mainnet:
+    enabled: false
     multiNode: true
     db:
       adminPassword: "CHANGEME"
@@ -14,10 +18,6 @@ dandelion:
       diskSize: "150Gi"
     deployIngress: true
     ingressBaseDomain: mainnet.dandelion.link
-    monitoring:
-      enabled: true
-    logging:
-      enabled: true
     cardano_db_sync:
       enabled: true
     cardano_graphql:
@@ -35,7 +35,7 @@ dandelion:
     cardano_submit_api:
       enabled: true
   testnet:
-    enabled: true
+    enabled: false
     db:
       adminPassword: "CHANGEME"
       roPassword: "CHANGEME"
@@ -43,10 +43,6 @@ dandelion:
       diskSize: "150Gi"
     deployIngress: true
     ingressBaseDomain: testnet.dandelion.link
-    monitoring:
-      enabled: true
-    logging:
-      enabled: true
     cardano_db_sync:
       enabled: true
     cardano_graphql:
