@@ -8,6 +8,8 @@ dandelion:
   argoProjectSuffix: "-v10-0-1"
   argoAppSuffix: "-v10-0-1"
   namespaceSuffix: "-v10-0-1"
+  ingressBaseDomain: null
+  ingressAlternativeDomain: null
   mainnet:
     enabled: true
     multiNode: false

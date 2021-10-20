@@ -34,7 +34,7 @@ dandelion:
     cardano_submit_api:
       enabled: true
   testnet:
-    enabled: false
+    enabled: true
     db:
       adminPassword: "CHANGEME"
       roPassword: "CHANGEME"
