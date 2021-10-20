@@ -1,0 +1,3 @@
+resources:
+- testnet-ingress.yaml
+- mainnet-ingress.yaml
