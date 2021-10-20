@@ -135,12 +135,13 @@ If you want to explore the db from outside the cluster (GUI tools, et al), you c
 ```
 NAMESPACE=dandelion-testnet
 # get read-only user/pass
-PGUSER=$(kubectl get configmap/common-env \
+PGPUSER=$(kubectl get secret/init0-postgresql-ha-pgpool-custom-users \
   -n ${NAMESPACE} \
-  --template='{{ index .data "POSTGREST_USER_RO" }}')
-PGPASSWORD=$(kubectl get secret/init0-postgresql-ha-postgresql \
+  --template='{{ index .data "usernames" }}' | base64 -d)
+PGPASSWORD=$(kubectl get secret/init0-postgresql-ha-pgpool-custom-users \
   -n ${NAMESPACE} \
-  --template='{{ index .data "postgrest-ro-password" }}' | base64 -d)
+  --template='{{ index .data "passwords" }}' | base64 -d)
+
 echo "User: ${PGUSER} Pass: ${PGPASSWORD}"
 # expose port
 kubectl port-forward -n dandelion-testnet init0-postgresql-ha-postgresql-0 5432:5432
