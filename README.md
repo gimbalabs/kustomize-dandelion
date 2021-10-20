@@ -85,6 +85,23 @@ kapp deploy -c \
   --file overlays/${OVERLAY}/output.yaml
 ```
 
+## Enable your deployment to be exposed behind the community service
+
+Execute this from the top dir of this git repository:
+
+* Deploy testnet ingresses:
+```
+NETWORK=testnet
+NAMESPACE=dandelion-${NETWORK}
+kubectl apply -n ${NAMESPACE} -f base/dandelion-${NETWORK}-public-ingresses/ingress.yaml
+```
+* Deploy mainnet ingresses:
+```
+NETWORK=mainnet
+NAMESPACE=dandelion-${NETWORK}
+kubectl apply -n ${NAMESPACE} -f base/dandelion-${NETWORK}-public-ingresses/ingress.yaml
+```
+
 ## Deploy in multi-node
 
 In order to deploy services into different kubernetes nodes/workers you can use the affinity-ready overlay `${NETWORK}-multi-node` (check patches [here](/base/mainnet-affinity-patches)). We've coupled some services (ie, db ones), decoupled some others (node and graphql) and let others to float around the cluster (any other "consumer" API). 
