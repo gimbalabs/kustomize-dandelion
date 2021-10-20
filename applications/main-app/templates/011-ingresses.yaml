@@ -16,12 +16,12 @@ spec:
             path: /
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "submit-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
-        http:
-          paths:
-            - backend:
-                serviceName: cardano-submit-api
-                servicePort: 8091
-              path: /
+      http:
+        paths:
+          - backend:
+              serviceName: cardano-submit-api
+              servicePort: 8091
+            path: /
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
