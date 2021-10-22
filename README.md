@@ -174,7 +174,7 @@ kubectl delete ns ${NAMESPACE}
 * Or even destroy the whole cluster
 ```
 CLUSTER_NAME=dandelion-testnet
-k3d delete cluster ${CLUSTER_NAME}
+k3d cluster delete ${CLUSTER_NAME}
 ```
 * Just [deploy again :)](#deploy-k8s-manifests)
 
