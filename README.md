@@ -152,7 +152,7 @@ If you want to explore the db from outside the cluster (GUI tools, et al), you c
 ```
 NAMESPACE=dandelion-testnet
 # get read-only user/pass
-PGPUSER=$(kubectl get secret/init0-postgresql-ha-pgpool-custom-users \
+PGUSER=$(kubectl get secret/init0-postgresql-ha-pgpool-custom-users \
   -n ${NAMESPACE} \
   --template='{{ index .data "usernames" }}' | base64 -d)
 PGPASSWORD=$(kubectl get secret/init0-postgresql-ha-pgpool-custom-users \
