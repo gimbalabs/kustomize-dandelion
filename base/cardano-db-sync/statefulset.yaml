@@ -37,7 +37,7 @@ spec:
         - name: RESTORE_SNAPSHOT
           value: "true"
         - name: DB_SYNC_SNAPSHOT_URL
-          value: "https://update-cardano-mainnet.iohk.io/cardano-db-sync/11/db-sync-snapshot-schema-11-block-6236059-x86_64.tgz"
+          value: "https://update-cardano-mainnet.iohk.io/cardano-db-sync/11/db-sync-snapshot-schema-11-block-6426045-x86_64.tgz"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
