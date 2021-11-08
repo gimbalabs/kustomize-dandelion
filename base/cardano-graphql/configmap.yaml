@@ -10,3 +10,44 @@ data:
     cp /opt/cardano/cnode/files/byron-genesis.json /config/
     cp /opt/cardano/cnode/files/genesis.json /config/
     cp /opt/cardano/cnode/files/alonzo-genesis.json /config/
+
+  initContainer-wait-for-tip: |
+
+    function finish-socat {
+      pkill -f socat && sleep 1
+      rm -f ${CARDANO_NODE_SOCKET_PATH}
+    }
+
+    trap finish-socat EXIT
+
+    echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
+    while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    rm -f ${CARDANO_NODE_SOCKET_PATH}
+    socat UNIX-LISTEN:${CARDANO_NODE_SOCKET_PATH},fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
+    while ! `cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    cardano-cli query tip --mainnet
+    if [ $? -eq 0 ]
+    then
+      MAGIC_ARG="--mainnet"
+    else
+      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
+    fi
+
+    export PGPASSWORD=${POSTGRES_PASSWORD}
+    DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
+    echo -n "[+] Waiting for db to reach tip..."
+    while [[ $(cardano-cli query tip ${MAGIC_ARG} | jq -r .syncProgress | awk -F. '{print $1}') -lt 99  ]] && [[ ${DB_EPOCH} -ne $(cardano-cli query tip ${MAGIC_ARG} | jq -r .epoch) ]]
+    do
+      sleep 60
+      echo -n .
+    done
