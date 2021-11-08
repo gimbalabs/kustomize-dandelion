@@ -69,24 +69,23 @@ data:
         if [ $? -eq 0 ]
         then
           tar -zxf snapshot.tgz
-          SNAPSHOT_EPOCH=$(ls *state* | awk -F '-' '{print $3}' | sed 's|.lstate||g')
           psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f *sql ${POSTGRES_DB}
           rm -f *sql
           mv *state* /db-sync-statedir
           chown -R root: /db-sync-statedir
-          echo -n "[+] Waiting for cardano-node to reach tip..."
-          while [ ${SNAPSHOT_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
-          do
-            sleep 60
-            echo -n .
-          done
-          exit 0
         else
           echo "[!] sha256sum check error for ${DB_SYNC_SNAPSHOT_URL}"
           exit 1
         fi
       fi
     fi
+    DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
+    echo -n "[+] Waiting for cardano-node to reach tip..."
+    while [ ${DB_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
+    do
+      sleep 60
+      echo -n .
+    done
 
   liveness-healthcheck: |
     KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces
