@@ -1,4 +1,4 @@
 resources:
 - configmap.yaml
-- cardano-graphql-deployment.yaml
-- cardano-graphql-service.yaml
+- deployment.yaml
+- service.yaml
