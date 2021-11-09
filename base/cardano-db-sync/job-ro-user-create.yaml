@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
       - name: create-db-ro-user
-        command: ["bash", "/configmap/create-db-ro-user-entrypoint"]
+        command: ["bash", "-x", "/configmap/create-db-ro-user-entrypoint"]
         # TODO: add envsubst (gettext-base pkg) depend to this image (or use a diff one)
         image: bitnami/postgresql-repmgr:11.9.0-debian-10-r10
         securityContext:
