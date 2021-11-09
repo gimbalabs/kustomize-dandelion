@@ -38,7 +38,7 @@ spec:
           value: "cardano-node-headless"
         - name: CARDANO_NODE_SOCKET_TCP_PORT
           value: "30000"
-        command: ["sh", "-c", "socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof"]
+        command: ["sh", "-c", "rm -f /ipc/node.socket; socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof"]
         volumeMounts:
         - mountPath: /ipc
           name: node-ipc
