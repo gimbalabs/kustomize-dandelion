@@ -27,6 +27,7 @@ data:
     }
 
     trap finish-socat EXIT
+    export PGPASSWORD=${POSTGRES_PASSWORD}
 
     echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
     while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
@@ -53,7 +54,6 @@ data:
 
     if [ "${RESTORE_SNAPSHOT}" == "true" ]
     then
-      export PGPASSWORD=${POSTGRES_PASSWORD}
       until psql -P pager=off -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB}
       do
         sleep 1
@@ -80,6 +80,7 @@ data:
       fi
     fi
     DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
+    test -z "${DB_EPOCH}" && DB_EPOCH=0
     echo -n "[+] Waiting for cardano-node to reach tip..."
     while [ ${DB_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
     do
