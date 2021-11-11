@@ -48,8 +48,10 @@ data:
     if [ $? -eq 0 ]
     then
       MAGIC_ARG="--mainnet"
+      S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI}
     else
       MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
+      S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI}
     fi
 
     if [ "${RESTORE_SNAPSHOT}" == "true" ]
@@ -61,9 +63,12 @@ data:
       if [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
       then
         cd /aux-data-dir
-        curl -Lo snapshot.tgz ${DB_SYNC_SNAPSHOT_URL}
-        SHA_URL=$(echo ${DB_SYNC_SNAPSHOT_URL} | sed 's|$|.sha256sum|')
-        curl -Lo snapshot.tgz.sha256sum.tmp ${SHA_URL}
+
+        read -d "\n" DB_SYNC_SNAPSHOT DB_SYNC_SNAPSHOT_SHA256_SUM <<<$(aws s3 ls --no-sign-request ${S3_BUCKET_URI} | awk '{print $NF}' | sort | tail -n2)
+
+        aws s3 cp --no-sign-request ${S3_BUCKET_URI}${DB_SYNC_SNAPSHOT} snapshot.tgz
+        aws s3 cp --no-sign-request ${S3_BUCKET_URI}${DB_SYNC_SNAPSHOT_SHA256_SUM} snapshot.tgz.sha256sum.tmp
+
         echo $(awk '{print $1}' snapshot.tgz.sha256sum.tmp) snapshot.tgz > snapshot.tgz.sha256sum
         sha256sum --check --status < snapshot.tgz.sha256sum
         if [ $? -eq 0 ]
@@ -74,7 +79,7 @@ data:
           mv *state* /db-sync-statedir
           chown -R root: /db-sync-statedir
         else
-          echo "[!] sha256sum check error for ${DB_SYNC_SNAPSHOT_URL}"
+          echo "[!] sha256sum check error for ${S3_BUCKET_URI}${DB_SYNC_SNAPSHOT}"
           exit 1
         fi
       fi

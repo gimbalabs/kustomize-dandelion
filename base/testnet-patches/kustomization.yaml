@@ -41,10 +41,6 @@ patches:
   target:
     kind: StatefulSet
     name: cardano-db-sync
-- path: patches/cardano-db-sync-deployment-initContainer-env.yaml
-  target:
-    kind: StatefulSet
-    name: cardano-db-sync
 # cardano-rosetta
 - path: patches/cardano-rosetta-deployment-image.yaml
   target:

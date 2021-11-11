@@ -36,8 +36,10 @@ spec:
           value: /ipc/node.socket
         - name: RESTORE_SNAPSHOT
           value: "true"
-        - name: DB_SYNC_SNAPSHOT_URL
-          value: "https://update-cardano-mainnet.iohk.io/cardano-db-sync/11/db-sync-snapshot-schema-11-block-6426045-x86_64.tgz"
+        - name: DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI
+          value: "s3://updates-cardano-testnet/cardano-db-sync/11/"
+        - name: DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI
+          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/11/"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
