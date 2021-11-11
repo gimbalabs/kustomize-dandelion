@@ -35,6 +35,18 @@ kubectl config use-context k3d-${CLUSTER_NAME}
 kubectl get pods -A
 ```
 
+You can also export the `kubeconfig` file from `k3d` like this:
+``` 
+CLUSTER_NAME=dandelion-dev
+k3d kubeconfig merge ${CLUSTER_NAME} --output ~/.kube/dandelion-dev.yaml
+```
+
+So in case you have different clusters and don't want to deal with contexts (having a single huge `kubeconfig` file, you can choose which cluster/file to use like this:
+```
+export KUBECONFIG=$HOME/.kube/dandelion-dev.yaml
+kubectl get pods -A
+```
+
 ## Clone this repository
 
 * For example, using command line like this:
