@@ -17,7 +17,7 @@ There currently are two ways to deploy Dandelion:
 
 | Network | CPU    | RAM   | DISK  |
 | ------- | ------ |------ | ----  |
-| Testnet | 4vCPU  | 8GB   | 30gb  |
+| Testnet | 4vCPU  | 8GB   | 50gb  |
 | Mainnet | 24vCPU | 24GB  | 120gb |
 
 NOTE: vCPUs are recommended to be dedicated for the db synchronization to stay close to blokchain tip.
