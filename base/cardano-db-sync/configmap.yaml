@@ -38,7 +38,7 @@ data:
 
     rm -f ${CARDANO_NODE_SOCKET_PATH}
     socat UNIX-LISTEN:${CARDANO_NODE_SOCKET_PATH},fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
-    while ! `cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
+    while ! `timeout 10 cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
     do
       sleep 1
       echo -n .
