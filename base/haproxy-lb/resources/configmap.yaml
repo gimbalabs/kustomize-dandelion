@@ -1,0 +1,116 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dandelion-haproxy-configmap
+data:
+  topology-mainnet.json: |  
+    {
+      "Providers": [
+          { "name": "PEACE-sw",     "addr": "v11.mainnet.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-soltia", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-gc",     "addr": "v11.mainnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "RSV",          "addr": "dmn.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
+          { "name": "EASY1",        "addr": "graphql-api.mainnet.dandelion.stakeboard.net", "port": 443, "protocol": "https" },
+          { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
+          { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+      ],
+      "Consumers": []
+    }
+
+  topology-testnet.json: |
+    {
+      "Providers": [
+          { "name": "PEACE-sw",     "addr": "v11.testnet.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-soltia", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-gc",     "addr": "v11.testnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "RSV",          "addr": "dtn.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
+          { "name": "EASY1",        "addr": "graphql-api.mainnet.dandelion.stakeboard.net", "port": 443, "protocol": "https" },
+          { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
+          { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+      ],
+      "Consumers": []
+    }
+
+  graphql-api-healthcheck.tpl: |
+        http-check send meth GET uri / ver HTTP/1.1 hdr host ${FQDN}
+        http-check expect rstring GET.query.missing
+  submit-api-healthcheck.tpl: |
+        http-check send meth POST uri /api/submit/tx ver HTTP/1.1 hdr host ${FQDN}
+        http-check expect status 415
+  explorer-api-healthcheck.tpl: |
+        http-check send meth GET uri /api/txs/last ver HTTP/1.1 hdr host ${FQDN}
+        http-check expect string cteId
+  ogmios-api-healthcheck.tpl: |
+        http-check send hdr Host ${FQDN} hdr Connection Upgrade hdr Upgrade websocket hdr Sec-WebSocket-Key x3JJHMbDL1EzLkh9GBhXDw== hdr Sec-WebSocket-Version 13
+        http-check expect status 101
+  postgrest-api-healthcheck.tpl: |
+        http-check send meth GET uri /epoch?limit=1 ver HTTP/1.1 hdr host ${FQDN}
+        http-check expect string out_sum
+  rosetta-api-healthcheck.tpl: |
+        http-check send meth GET uri / ver HTTP/1.1 hdr host ${FQDN}
+        http-check expect rstring message.*Route.GET.*404
+  initContainer-entrypoint: |
+    #!/bin/bash
+
+    ls -hl ${HEALTHCHECKS_TEMPLATE_DIR}
+    
+    rm -f ${CONFIG_OUTPUT_DIR}/dandelion-haproxy.cfg
+    
+    # FRONTEND conf
+    cat > ${CONFIG_OUTPUT_DIR}/dandelion-haproxy.cfg <<EOF
+      frontend main
+        mode http
+        bind :80
+        bind :443 ssl crt /usr/local/etc/ssl/self-signed-ssl.pem
+        http-request redirect scheme https code 301 unless { ssl_fc }
+    
+        acl valid_hosts hdr(host) -m reg -i ($(echo $APIS | sed 's/ /|/g')).($(echo $NETWORKS | sed 's/ /|/g')).${DOMAIN}$
+        http-request deny if !valid_hosts
+    
+        use_backend %[req.hdr(Host),lower]
+        default_backend no-match
+    EOF
+    
+    # BACKENDS conf
+    for network in ${NETWORKS}
+    do
+    
+      for api in ${APIS}
+      do
+    
+        export FQDN="${api}.${network}.${DOMAIN}"
+    
+        jq -rc .Providers[] ${TOPOLOGY_DIR}/topology-${network}.json | while read provider
+        do
+          PROVIDER_NAME=$(echo $provider | jq -r .name)
+          PROVIDER_HOST=$(echo $provider | jq -r .addr)
+          PROVIDER_PORT=$(echo $provider | jq -r .port)
+          PROVIDER_PROTO=$(echo $provider | jq -r .protocol)
+          if [ "${PROVIDER_PROTO}" == "https" ]
+          then
+            CHECK="check ssl verify none check-sni ${FQDN}"
+          else
+            CHECK="check"
+          fi
+          echo "    server ${PROVIDER_NAME}    ${PROVIDER_HOST}:${PROVIDER_PORT} ${CHECK}"
+        done > /tmp/${FQDN}.backends.haproxy.cfg
+        
+      
+        cat > /tmp/${FQDN}.haproxy.cfg <<EOF
+      backend ${FQDN} 
+        mode http
+        balance roundrobin
+        option httpchk
+    $(envsubst < ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl)
+    
+        http-request set-header Host ${FQDN}
+    
+    $(cat /tmp/${FQDN}.backends.haproxy.cfg)
+    
+    EOF
+      cat /tmp/${FQDN}.haproxy.cfg >> ${CONFIG_OUTPUT_DIR}/dandelion-haproxy.cfg
+      done
+    done
+  
