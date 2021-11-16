@@ -1,0 +1,71 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-koios-sql
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      serviceAccountName: koios-deploy-sql
+      containers:
+      - name: deploy-koios-sql
+        command: ["bash", "-x", "/configmap/koios-deploy-sql-entrypoint"]
+        # TODO: add envsubst (gettext-base pkg) depend to this image (or use a diff one)
+        image: gimbalabs/cardano-db-sync:init-container
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        volumeMounts:
+        - name: koios-configmap
+          mountPath: /configmap
+        - name: cardano-node-configmap
+          mountPath: /cardano-node-configmap
+        env:
+        - name: KOIOS_BRANCH
+          value: alpha
+        - name: CNODE_CONFIG_FILE
+          value: /cardano-node-configmap/config.json
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST_RW
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-postgresql
+              key: postgresql-password
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
+      restartPolicy: Never
+      volumes:
+      - name: koios-configmap
+        configMap:
+          name: koios-configmap
+      - name: cardano-node-configmap
+        configMap:
+          name: cardano-node
+

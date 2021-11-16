@@ -1,0 +1,11 @@
+resources:
+- rbac.yaml
+- configmap.yaml
+- job-deploy-koios-sql.yaml
+
+#patches:
+#- path: patches/container-injection.yaml
+#  target:
+#    kind: StatefulSet
+#    name: init0-postgresql-ha-postgresql
+#
