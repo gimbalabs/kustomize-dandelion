@@ -7,9 +7,9 @@ data:
   POSTGRES_HOST_RO: init0-postgresql-ha-pgpool
   POSTGRES_HOST_RW: init0-postgresql-ha-postgresql
   POSTGRES_PORT: "5432"
-  POSTGRES_DB: cdbs
+  POSTGRES_DB: cexplorer
   POSTGRES_USER: postgres
-  POSTGREST_USER_RO:  postgrest_ro
+  POSTGREST_USER_RO:  web_anon
   chisel-auth-file: |
     {
       "admin:CHANGEME": [""]
