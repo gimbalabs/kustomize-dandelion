@@ -4,7 +4,7 @@ metadata:
   name: common-env
 data:
   POSTGRES_HOST: init0-postgresql-ha-postgresql
-  POSTGRES_HOST_RO: init0-postgresql-ha-pgpool
+  POSTGRES_HOST_RO: init0-postgresql-ha-postgresql
   POSTGRES_HOST_RW: init0-postgresql-ha-postgresql
   POSTGRES_PORT: "5432"
   POSTGRES_DB: cexplorer
