@@ -100,8 +100,8 @@ spec:
           value: grest
         ports:
         - containerPort: 3000
-        image: postgrest/postgrest:v8.0.0
-        command: ["sh", "-c", "export PGRST_DB_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}; postgrest /etc/postgrest.conf"]
+        image: gimbalabs/postgrest:v8.0.0
+        command: ["sh", "-c", "export PGRST_DB_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}; /bin/postgrest"]
         imagePullPolicy: IfNotPresent
         resources: {}
         volumeMounts:
