@@ -14,55 +14,6 @@ spec:
       labels:
         io.kompose.service: postgrest
     spec:
-      initContainers:
-      - name: configure
-        command: ["bash", "-x", "/configmap/initContainer-entrypoint"]
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsUser: 0
-        image: gimbalabs/cardano-db-sync:init-container
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: PGRST_DB_SCHEMA
-          value: grest
-        - name: POSTGRES_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: common-env
-              key: POSTGRES_HOST_RW
-        - name: POSTGRES_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: common-env
-              key: POSTGRES_PORT
-        - name: POSTGRES_DB
-          valueFrom:
-            configMapKeyRef:
-              name: common-env
-              key: POSTGRES_DB
-        - name: POSTGRES_USER
-          valueFrom:
-            configMapKeyRef:
-              name: common-env
-              key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: init0-postgresql-ha-postgresql
-              key: postgresql-password
-        - name: POSTGRES_USER_RO
-          valueFrom:
-            secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: usernames
-        - name: POSTGRES_PASSWORD_RO
-          valueFrom:
-            secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: passwords
-        volumeMounts:
-        - name: postgrest-configmap
-          mountPath: /configmap
       containers:
       - name: postgrest
         env:
@@ -97,7 +48,7 @@ spec:
               name: init0-postgresql-ha-pgpool-custom-users
               key: usernames
         - name: PGRST_DB_SCHEMA
-          value: grest
+          value: public
         ports:
         - containerPort: 3000
         image: gimbalabs/postgrest:v8.0.0
