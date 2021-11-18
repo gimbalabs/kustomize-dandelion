@@ -10,11 +10,7 @@ spec:
       containers:
       - name: deploy-koios-sql
         command: ["bash", "-x", "/configmap/koios-deploy-sql-entrypoint"]
-        # TODO: add envsubst (gettext-base pkg) depend to this image (or use a diff one)
         image: gimbalabs/cardano-db-sync:init-container
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsUser: 0
         volumeMounts:
         - name: koios-configmap
           mountPath: /configmap
@@ -45,7 +41,7 @@ spec:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
+        - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql

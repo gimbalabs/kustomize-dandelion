@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pool-history-cache-update
+spec:
+  schedule: "*/10 * * * *"
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 540
+      template:
+        spec:
+          serviceAccountName: koios-deploy-sql
+          containers:
+          - name: pool-history-cache-update
+            command: ["bash", "-x", "/configmap/pool-history-cache-update"]
+            image: gimbalabs/cardano-db-sync:init-container
+            volumeMounts:
+            - name: koios-configmap
+              mountPath: /configmap
+            - name: cardano-node-configmap
+              mountPath: /cardano-node-configmap
+            env:
+            - name: KOIOS_BRANCH
+              value: alpha
+            - name: CNODE_CONFIG_FILE
+              value: /cardano-node-configmap/config.json
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: common-env
+                  key: POSTGRES_HOST_RW
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: common-env
+                  key: POSTGRES_PORT
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: common-env
+                  key: POSTGRES_DB
+            - name: PGUSER
+              valueFrom:
+                configMapKeyRef:
+                  name: common-env
+                  key: POSTGRES_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: init0-postgresql-ha-postgresql
+                  key: postgresql-password
+          restartPolicy: Never
+          volumes:
+          - name: koios-configmap
+            configMap:
+              name: koios-configmap
+          - name: cardano-node-configmap
+            configMap:
+              name: cardano-node
+    
