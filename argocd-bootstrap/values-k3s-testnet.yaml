@@ -1,35 +1,36 @@
 dandelion:
   provider:
     name: k3s
-  #argoAppSuffix: "-v9"
-  #namespaceSuffix: "-v9"
-  #multiNode: true
+  argoProjectSuffix: "-v11-0-4"
+  argoAppSuffix: "-v11-0-4"
+  namespaceSuffix: "-v11-0-4"
+  multiNode: true
   cardano:
     network: testnet
   db:
-    adminPassword: "CHANGEME"
-    roPassword: "CHANGEME"
-    repmgrPassword: "CHANGEME"
-    diskSize: "10Gi"
+    adminPassword: "aCHANGEME"
+    roPassword: "aCHANGEME"
+    repmgrPassword: "aCHANGEME"
+    diskSize: "20Gi"
   deployIngress: true
   ingressBaseDomain: testnet.local
   monitoring: 
-    enabled: false
+    enabled: true
   logging:
-    enabled: false
+    enabled: true
   cardano_db_sync:
     enabled: true
   cardano_graphql:
-    enabled: false
+    enabled: true
   cardano_rosetta:
-    enabled: false
+    enabled: true
   metrics_exporter:
-    enabled: false
+    enabled: true
   ogmios:
-    enabled: false
+    enabled: true
   postgrest:
-    enabled: false
+    enabled: true
   cardano_explorer_api:
-    enabled: false
+    enabled: true
   cardano_submit_api:
-    enabled: false
+    enabled: true

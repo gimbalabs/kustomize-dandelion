@@ -2,3 +2,10 @@ resources:
 - statefulset.yaml
 - configmap.yaml
 - job-ro-user-create.yaml 
+
+#patches:
+#- path: patches/container-injection.yaml
+#  target:
+#    kind: StatefulSet
+#    name: init0-postgresql-ha-postgresql
+#

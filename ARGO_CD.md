@@ -22,7 +22,7 @@ This means that the ArgoCD will first install itself and then proceed to install
 
 Before bootstrapping ArgoCD, it's necessary to fetch all Helm dependencies.
 
-> **NOTE**: Please check section below on how to set a custom password to access ArgoCD. 
+> **NOTE**: Please check section below on how to set a custom password to access ArgoCD if you don't have available the `htpasswd` tool used in the following snippet 
 
 ```shell
 APP_PROVIDER=k3s
