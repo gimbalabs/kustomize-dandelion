@@ -320,7 +320,7 @@ postgresql:
 
   ## PostgreSQL configuration parameters
   ##
-  password: cdbsCHANGEME
+  #password: cdbsCHANGEME
   database: cexplorer
   # password:
   # database:
@@ -520,7 +520,7 @@ pgpool:
   ##
   customUsers:
   ##  Comma or semicolon separated list of postgres usernames
-     usernames: 'web_anon'
+     usernames: 'dandelion_ro'
 
   ##  Comma or semicolon separated list of the associated passwords for the
   ##  users above
