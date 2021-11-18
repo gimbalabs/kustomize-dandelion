@@ -5,13 +5,14 @@ metadata:
 data:
   create-db-ro-user-entrypoint: |
     apt update -qq && apt install -y gettext-base
-    export PGPASSWORD=${POSTGRES_PASSWORD}
     while [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
     do
       sleep 1
     done
     envsubst < /configmap/create-ro-user.sql.tpl > /tmp/create-ro-user.sql
     psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /tmp/create-ro-user.sql ${POSTGRES_DB}
+    psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /configmap/extra.sql ${POSTGRES_DB}
+
   create-ro-user.sql.tpl: |
     CREATE ROLE ${POSTGRES_USER_RO};
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER_RO};
@@ -20,6 +21,47 @@ data:
     ALTER ROLE ${POSTGRES_USER_RO} WITH login;
     ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
+  extra.sql: |
+    CREATE OR REPLACE FUNCTION get_tx_history_for_addresses(data json) RETURNS TABLE (tx_hash text, block uinteger, tx_timestamp timestamp) AS $$
+    DECLARE
+      addresses text[];
+    BEGIN
+      addresses := (SELECT array_agg(replace(rec::text, '"', ''))
+                    FROM json_array_elements(data->'addresses') rec);
+      RETURN QUERY (SELECT trim(txs.hash, '\\\\x') , txs.block_no, txs.time from (
+        SELECT
+          tx.id, tx.hash::text, block.block_no, block.hash::text as blockHash, block.time, tx.block_index
+          FROM block
+          INNER JOIN tx ON block.id = tx.block_id
+          INNER JOIN tx_out ON tx.id = tx_out.tx_id
+          WHERE tx_out.address = ANY(addresses)
+        UNION
+          SELECT DISTINCT
+            tx.id, tx.hash::text, block.block_no, block.hash::text as blockHash, block.time, tx.block_index
+            FROM block
+            INNER JOIN tx ON block.id = tx.block_id
+            INNER JOIN tx_in ON tx.id = tx_in.tx_in_id
+            INNER JOIN tx_out ON (tx_in.tx_out_id = tx_out.tx_id) AND (tx_in.tx_out_index = tx_out.index)
+            WHERE tx_out.address = ANY(addresses)
+            ORDER BY time DESC
+      ) AS txs);
+    END; $$ LANGUAGE PLPGSQL IMMUTABLE;
+
+    CREATE OR REPLACE FUNCTION get_eoe_balance_for_addresses(data json) RETURNS TABLE (balance numeric, address character varying) AS $$
+    DECLARE
+      addresses text[];
+      epoch int;
+    BEGIN
+      addresses := (SELECT array_agg(replace(rec::text, '"', ''))
+                    FROM json_array_elements(data->'addresses') rec);
+      SELECT json_extract_path_text(data, 'epoch') INTO epoch AS tmp;
+      RETURN QUERY (SELECT SUM(utxo_view.value), utxo_view.address FROM utxo_view
+        INNER JOIN tx ON tx.id = utxo_view.tx_id
+        INNER JOIN block ON block.id = tx.block_id
+        WHERE utxo_view.address = ANY(addresses)
+        AND block.slot_no <= (select get_last_slot_for_epoch(epoch))
+        GROUP BY utxo_view.address);
+    END; $$ LANGUAGE PLPGSQL IMMUTABLE;
   initContainer-entrypoint: |
     function finish-socat {
       pkill -f socat && sleep 1
@@ -27,7 +69,6 @@ data:
     }
 
     trap finish-socat EXIT
-    export PGPASSWORD=${POSTGRES_PASSWORD}
 
     echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
     while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
@@ -87,7 +128,7 @@ data:
     DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
     test -z "${DB_EPOCH}" && DB_EPOCH=0
     echo -n "[+] Waiting for cardano-node to reach tip..."
-    while [ ${DB_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
+    while [[ -n $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]] && [ ${DB_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
     do
       sleep 60
       echo -n .
