@@ -1,24 +1,26 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: create-db-ro-user
+  name: deploy-koios-sql
 spec:
   backoffLimit: 5
-  activeDeadlineSeconds: 600
   template:
     spec:
+      serviceAccountName: koios-deploy-sql
       containers:
-      - name: create-db-ro-user
-        command: ["bash", "-x", "/configmap/create-db-ro-user-entrypoint"]
-        # TODO: add envsubst (gettext-base pkg) depend to this image (or use a diff one)
-        image: bitnami/postgresql-repmgr:11.9.0-debian-10-r10
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsUser: 0
+      - name: deploy-koios-sql
+        command: ["bash", "-x", "/configmap/koios-deploy-sql-entrypoint"]
+        image: gimbalabs/cardano-db-sync:init-container
         volumeMounts:
-        - name: cardano-db-sync-configmap
+        - name: koios-configmap
           mountPath: /configmap
+        - name: cardano-node-configmap
+          mountPath: /cardano-node-configmap
         env:
+        - name: KOIOS_BRANCH
+          value: alpha
+        - name: CNODE_CONFIG_FILE
+          value: /cardano-node-configmap/config.json
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -56,6 +58,10 @@ spec:
               key: passwords
       restartPolicy: Never
       volumes:
-      - name: cardano-db-sync-configmap
+      - name: koios-configmap
         configMap:
-          name: cardano-db-sync-configmap
+          name: koios-configmap
+      - name: cardano-node-configmap
+        configMap:
+          name: cardano-node
+

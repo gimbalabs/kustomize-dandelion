@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: koios-configmap
+data:
+  initContainer-entrypoint: |
+    while [ -z "$(psql -tA -P pager=off -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c 'SELECT schema_name FROM information_schema.schemata' ${POSTGRES_DB} | grep ^${PGRST_DB_SCHEMA}$)" ]
+    do
+      sleep 1
+    done
+    envsubst < /configmap/grant-permissions.sql.tpl > /tmp/grant-permissions.sql
+    psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /tmp/grant-permissions.sql ${POSTGRES_DB}
+  grant-permissions.sql.tpl: |
+    GRANT SELECT ON ALL TABLES IN SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
+    GRANT USAGE ON SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
+  asset-registry-update: |
+    bash -x /configmap/initContainer-entrypoint
+    curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
+    bash -x asset-registry-update.sh
+  pool-history-cache-update: |
+    bash -x /configmap/initContainer-entrypoint
+    curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
+    bash -x pool-history-cache-update.sh
+  stake-distribution-update: |
+    bash -x /configmap/initContainer-entrypoint
+    curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
+    bash -x stake-distribution-update.sh
+  koios-deploy-sql-entrypoint: |
+    function init {
+
+      export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+      KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+      NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+
+
+      touch /tmp/.pgpass && export PGPASSFILE=/tmp/.pgpass
+      export PGUSER=${POSTGRES_USER}
+      export PGDATABASE=${POSTGRES_DB}
+      export PGHOST=${POSTGRES_HOST}
+      export CONFIG=${CNODE_CONFIG_FILE}
+      export BRANCH=${KOIOS_BRANCH}
+      export URL_RAW="https://raw.githubusercontent.com/cardano-community/guild-operators/${BRANCH}"
+      export DB_SCRIPTS_URL="${URL_RAW}/scripts/grest-helper-scripts/db-scripts"
+
+      export CURL_TIMEOUT=20
+    }
+
+    init
+
+    curl -LO https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/scripts/grest-helper-scripts/setup-grest.sh
+
+    sed -i '/.*# Execution.*/,$d' setup-grest.sh
+
+    source setup-grest.sh
+
+    function setup_cron_jobs {
+      return 0
+    }
+
+    echo -n "[!] Waiting for db to reach Mary era if needed..."
+    while [[ "$(psql -qtAX -d ${PGDATABASE} -c 'SELECT protocol_major FROM public.param_proposal WHERE protocol_major >= 4 ORDER BY protocol_major DESC LIMIT 1' 2>/dev/null)" == "" ]]
+    do
+      echo -n .
+      sleep 10
+    done
+
+    setup_db_basics
+    deploy_query_updates
+
+    POSTGREST_POD=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r .items[].metadata.name | grep ^koios-api)
+    curl -m 30 -sSk -X DELETE -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods/${POSTGREST_POD}"
+

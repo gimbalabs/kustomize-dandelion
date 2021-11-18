@@ -320,7 +320,7 @@ postgresql:
 
   ## PostgreSQL configuration parameters
   ##
-  password: cdbsCHANGEME
+  #password: cdbsCHANGEME
   database: cexplorer
   # password:
   # database:
@@ -520,7 +520,7 @@ pgpool:
   ##
   customUsers:
   ##  Comma or semicolon separated list of postgres usernames
-     usernames: 'web_anon'
+     usernames: 'dandelion_ro'
 
   ##  Comma or semicolon separated list of the associated passwords for the
   ##  users above
@@ -605,7 +605,7 @@ pgpool:
 
   ## Number of replicas to deploy
   ##
-  replicaCount: 1
+  replicaCount: 0
 
   ## Additional pod annotations
   ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/

@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: koios-api
+  name: koios-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: koios-api
+  template:
+    metadata:
+      labels:
+        io.kompose.service: koios-api
+    spec:
+      initContainers:
+      - name: configure
+        command: ["bash", "-x", "/configmap/initContainer-entrypoint"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        image: gimbalabs/cardano-db-sync:init-container
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PGRST_DB_SCHEMA
+          value: grest
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST_RW
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-postgresql
+              key: postgresql-password
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
+        volumeMounts:
+        - name: koios-configmap
+          mountPath: /configmap
+      containers:
+      - name: koios-api
+        env:
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST_RO
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_DB
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
+        - name: PGRST_DB_ANON_ROLE
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: PGRST_DB_SCHEMA
+          value: grest
+        ports:
+        - containerPort: 3000
+        image: gimbalabs/postgrest:v8.0.0
+        command: ["sh", "-c", "export PGRST_DB_URI=postgres://${POSTGRES_USER_RO}:${POSTGRES_PASSWORD_RO}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}; /bin/postgrest"]
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        volumeMounts:
+        - name: common-env
+          mountPath: /run/secrets/common-env
+          readOnly: true
+        - name: postgres-password
+          mountPath: /run/secrets/postgres-password
+          readOnly: true
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - name: common-env
+        configMap:
+          name: common-env
+      - name: postgres-password
+        secret:
+          secretName: init0-postgresql-ha-pgpool-custom-users
+          items:
+          - key: passwords
+            path: POSTGREST_RO_PASSWORD
+      - name: koios-configmap
+        configMap:
+          name: koios-configmap
+

@@ -1,0 +1,9 @@
+resources:
+- rbac.yaml
+- configmap.yaml
+- job-deploy-koios-sql.yaml
+- deployment.yaml
+- service.yaml
+- cronjob-stake-distribution-update.yaml
+- cronjob-asset-registry-update.yaml 
+- cronjob-pool-history-cache-update.yaml 

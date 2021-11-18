@@ -43,7 +43,6 @@ data:
       MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
     fi
 
-    export PGPASSWORD=${POSTGRES_PASSWORD}
     DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
     echo -n "[+] Waiting for db to reach tip..."
     while [[ $(cardano-cli query tip ${MAGIC_ARG} | jq -r .syncProgress | awk -F. '{print $1}') -lt 99  ]] && [[ ${DB_EPOCH} -ne $(cardano-cli query tip ${MAGIC_ARG} | jq -r .epoch) ]]

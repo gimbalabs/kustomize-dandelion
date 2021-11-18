@@ -59,7 +59,7 @@ spec:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_USER
-        - name: POSTGRES_PASSWORD
+        - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
