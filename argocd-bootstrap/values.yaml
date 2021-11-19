@@ -5,14 +5,14 @@ git:
 dandelion:
   provider:
     name: null
-  argoProjectSuffix: "-v10-0-1"
-  argoAppSuffix: "-v10-0-1"
-  namespaceSuffix: "-v10-0-1"
+  argoProjectSuffix: "-v11-0-4"
+  argoAppSuffix: "-v11-0-4"
+  namespaceSuffix: "-v11-0-4"
   ingressBaseDomain: null
   ingressAlternativeDomain: null
+  multiNode: false
   mainnet:
     enabled: true
-    multiNode: false
     db:
       adminPassword: "CHANGEME"
       roPassword: "CHANGEME"
@@ -20,7 +20,6 @@ dandelion:
       diskSize: "60Gi"
   testnet:
     enabled: false
-    multiNode: false
     db:
       adminPassword: "CHANGEME"
       roPassword: "CHANGEME"
@@ -56,7 +55,7 @@ argo-cd:
         - name: kustomized-kustomize-network
           generate:
             command: ["/bin/sh", "-c"]
-            args: ["if [ ${MULTI_NODE_AFFINITY} ]; then echo \"- ../../${CARDANO_NETWORK}-affinity-patches\" >> ../../base/helpers/${CARDANO_NETWORK}-patcher/kustomization.yaml; fi ; kustomize build > ../../base/helpers/${CARDANO_NETWORK}-patcher/input.yaml && kustomize build ../../base/helpers/${CARDANO_NETWORK}-patcher"]
+            args: ["if [ \"${MULTI_NODE_AFFINITY}\" == \"true\" ]; then echo \"- ../../${CARDANO_NETWORK}-affinity-patches\" >> ../../base/helpers/${CARDANO_NETWORK}-patcher/kustomization.yaml; fi ; kustomize build > ../../base/helpers/${CARDANO_NETWORK}-patcher/input.yaml && kustomize build ../../base/helpers/${CARDANO_NETWORK}-patcher"]
         - name: kustomized-kustomize-ipfs-cluster
           generate:
             command: ["/bin/bash", "-c"]

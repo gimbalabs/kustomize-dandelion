@@ -1,15 +1,13 @@
 dandelion:
   provider:
-    name: k3s
+    name: scaleway
   #argoAppSuffix: "-v9"
   #namespaceSuffix: "-v9"
-  multiNode: false
+  multiNode: true
   monitoring:
     enabled: true
   logging:
     enabled: true
-  testnet:
-    enabled: false
   mainnet:
     enabled: true
     db:
@@ -18,7 +16,7 @@ dandelion:
       repmgrPassword: "CHANGEME"
       diskSize: "150Gi"
     deployIngress: true
-    ingressBaseDomain: testnet.local
+    ingressBaseDomain: mainnet.dandelion.link
     cardano_db_sync:
       enabled: true
     cardano_graphql:
@@ -37,3 +35,5 @@ dandelion:
       enabled: true
     koios:
       enabled: true
+  testnet:
+    enabled: false

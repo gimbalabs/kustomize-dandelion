@@ -20,17 +20,15 @@ This means that the ArgoCD will first install itself and then proceed to install
 
 ## Bootstrap
 
-Before bootstrapping ArgoCD, it's necessary to fetch all Helm dependencies.
+Feel free to customize the `argocd-bootstrap/values-${PROVIDER}.yaml` file enabling or disabling apps or networks at choice, then you can use this snippet to deploy.
 
-> **NOTE**: Please check section below on how to set a custom password to access ArgoCD. 
+-> **NOTE**: This snippet assumes you have `htpasswd` cli tool (`apache2-utils` package in Ubuntu), if you don't have it or can't install iy, please check section below on how to set a custom password to access ArgoCD.
 
 ```shell
 APP_PROVIDER=k3s
-APP_NETWORK=testnet
 
 export ARGOCD_PASSWORD=CH4NG3@M3
 export ARGOCD_HASHED_PASSWORD=$(htpasswd -nbBC 10 null $ARGOCD_PASSWORD | sed 's|null:\(.*\)|\1|g')
-
 
 cd argocd-bootstrap
 
@@ -43,39 +41,10 @@ helm upgrade \
     --install argocd \
     --set "argo-cd.configs.secret.argocdServerAdminPassword=${ARGOCD_HASHED_PASSWORD}" \
     --set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
-    -f values-scaleway.yaml \
-    -f values-scaleway-mainnet-stakeboard.yaml \
+    -f values-k3s.yaml \
     .
 ```
 
-## Deploy more apps/networks
-
-* Install `argocd` cli tool and login into the server
-* Set environment:
-```
-APP_PROVIDER=k3s
-APP_NETWORK=mainnet
-APP_SUFFIX=-v9-0-0
-APP_NAME=dandelion-${APP_NETWORK}${APP_SUFFIX}
-APP_REVISION=refactor/add-base-and-multi-node-overlays # this can be a branch
-VALUES_FILE=argocd-bootstrap/values-${APP_PROVIDER}-${APP_NETWORK}.yaml
-```
-* Then execute from this from the root of the repository:
-```
-argocd app create \
-  ${APP_NAME} \
-  --project default \
-  --repo https://gitlab.com/gimbalabs/dandelion/kustomize-dandelion.git \
-  --revision ${APP_REVISION} \
-  --path applications/main-app \
-  --helm-set git.targetRevision=${APP_REVISION} \
-  --values-literal-file ${VALUES_FILE} \
-  --sync-policy automated \
-  --sync-option Prune=true \
-  --sync-option selfHeal=true \
-  --sync-option ApplyOutOfSyncOnly=true \
-  --dest-server https://kubernetes.default.svc
-```
 
 ## Access ArgoCD
 
