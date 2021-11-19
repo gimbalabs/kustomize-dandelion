@@ -168,6 +168,39 @@ spec:
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
+  name: koios-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
+spec:
+  rules:
+    - host: "koios-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: koios-api
+              servicePort: 3000
+            path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "koios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: koios-api
+              servicePort: 3000
+            path: /
+    {{- end }}
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+    - hosts:
+        - "koios-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "koios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
+      #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
   name: rosetta-api
   namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
 spec:
