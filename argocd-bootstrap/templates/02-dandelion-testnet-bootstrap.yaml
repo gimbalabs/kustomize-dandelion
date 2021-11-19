@@ -26,7 +26,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default
+  project: dandelion-testnet{{ .Values.dandelion.argoAppSuffix }}
   source:
     repoURL: {{ .Values.git.repositoryUrl }}
     targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
