@@ -46,7 +46,7 @@ spec:
           {{- end }}
         pgpool:
           customUsers:
-            usernames: 'postgrest_ro'
+            usernames: 'dandelion_ro'
             passwords: {{ .Values.dandelion.db.roPassword | default "CHANGEME" }}
         metrics:
           enabled: true
