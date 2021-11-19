@@ -1,0 +1,66 @@
+{{ if .Values.dandelion.testnet.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: dandelion-testnet{{ .Values.dandelion.argoAppSuffix }}
+  namespace: argocd
+  # Finalizer that ensures that project is not deleted until it is not referenced by any application
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: dandelion-testnet{{ .Values.dandelion.argoAppSuffix }}
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  destinations:
+  - namespace: '*'
+    server: '*'
+  sourceRepos:
+  - '*'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dandelion-testnet{{ .Values.dandelion.argoAppSuffix }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.git.repositoryUrl }}
+    targetRevision: {{ .Values.git.targetRevision | default "HEAD" }}
+    path: applications/main-app
+    helm:
+      parameters:
+        # This could be used to test dev branches.
+        - name: "git.targetRevision"
+          value: {{ .Values.git.targetRevision | default "HEAD" }}
+        - name: "dandelion.cardano.network"
+          value: "testnet"
+        - name: "dandelion.provider.name"
+          value: {{ .Values.dandelion.provider.name }}
+        - name: "dandelion.argoProjectSuffix"
+          value: {{ .Values.dandelion.argoProjectSuffix }}
+        - name: "dandelion.argoAppSuffix"
+          value: {{ .Values.dandelion.argoAppSuffix }}
+        - name: "dandelion.namespaceSuffix"
+          value: {{ .Values.dandelion.namespaceSuffix }}
+      values: |
+        dandelion:
+        {{ with .Values.dandelion.testnet }}
+{{ toYaml . | indent 10 }}
+        {{ end }}
+      valueFiles:
+        - values.yaml
+        - values-{{ .Values.dandelion.provider.name }}.yaml
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ApplyOutOfSyncOnly=true
+  destination:
+    namespace: argocd
+    server: https://kubernetes.default.svc
+{{ end }}

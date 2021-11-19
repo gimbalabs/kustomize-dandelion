@@ -14,10 +14,22 @@ spec:
               serviceName: cardano-submit-api
               servicePort: 8091
             path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "submit-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: cardano-submit-api
+              servicePort: 8091
+            path: /
+    {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
     - hosts:
         - "submit-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "submit-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
       #secretName: local-tls
 
 ---
@@ -35,10 +47,22 @@ spec:
               serviceName: cardano-graphql
               servicePort: 3100
             path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "graphql-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: cardano-graphql
+              servicePort: 3100
+            path: /
+    {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
     - hosts:
         - "graphql-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "graphql-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
       #secretName: local-tls
 
 ---
@@ -56,10 +80,22 @@ spec:
               serviceName: chisel-server
               servicePort: 40000
             path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "chisel-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: chisel-server
+              servicePort: 40000
+            path: /
+    {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
     - hosts:
         - "chisel-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "chisel-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
       #secretName: local-tls
 
 ---
@@ -77,10 +113,22 @@ spec:
               serviceName: ogmios
               servicePort: 1337
             path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "ogmios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: ogmios
+              servicePort: 1337
+            path: /
+    {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
     - hosts:
         - "ogmios-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "ogmios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
       #secretName: local-tls
 
 ---
@@ -98,10 +146,55 @@ spec:
               serviceName: postgrest
               servicePort: 3000
             path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "postgrest-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: postgrest
+              servicePort: 3000
+            path: /
+    {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
     - hosts:
         - "postgrest-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "postgrest-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
+      #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: koios-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
+spec:
+  rules:
+    - host: "koios-api.{{ .Values.dandelion.ingressBaseDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: koios-api
+              servicePort: 3000
+            path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "koios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: koios-api
+              servicePort: 3000
+            path: /
+    {{- end }}
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+    - hosts:
+        - "koios-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "koios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
       #secretName: local-tls
 
 ---
@@ -119,10 +212,22 @@ spec:
               serviceName: cardano-rosetta
               servicePort: 8080
             path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "rosetta-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: cardano-rosetta
+              servicePort: 8080
+            path: /
+    {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
     - hosts:
         - "rosetta-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "rosetta-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
       #secretName: local-tls
 
 ---
@@ -140,8 +245,20 @@ spec:
               serviceName: postgres-ws
               servicePort: 3000
             path: /
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "postgresws-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              serviceName: postgres-ws
+              servicePort: 3000
+            path: /
+    {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
     - hosts:
         - "postgresws-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "postgresws-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
 {{ end }}
