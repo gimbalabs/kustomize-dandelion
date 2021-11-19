@@ -21,22 +21,22 @@ spec:
           value: alpha
         - name: CNODE_CONFIG_FILE
           value: /cardano-node-configmap/config.json
-        - name: POSTGRES_HOST
+        - name: PGHOST
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_HOST_RW
-        - name: POSTGRES_PORT
+        - name: PGPORT
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_PORT
-        - name: POSTGRES_DB
+        - name: PGDATABASE
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_DB
-        - name: POSTGRES_USER
+        - name: PGUSER
           valueFrom:
             configMapKeyRef:
               name: common-env
