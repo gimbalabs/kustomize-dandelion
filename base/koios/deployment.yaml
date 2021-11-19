@@ -25,22 +25,22 @@ spec:
         env:
         - name: PGRST_DB_SCHEMA
           value: grest
-        - name: POSTGRES_HOST
+        - name: PGHOST
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_HOST_RW
-        - name: POSTGRES_PORT
+        - name: PGPORT
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_PORT
-        - name: POSTGRES_DB
+        - name: PGDATABASE
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_DB
-        - name: POSTGRES_USER
+        - name: PGUSER
           valueFrom:
             configMapKeyRef:
               name: common-env
@@ -66,27 +66,27 @@ spec:
       containers:
       - name: koios-api
         env:
-        - name: POSTGRES_HOST
+        - name: PGHOST
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_HOST_RO
-        - name: POSTGRES_PORT
+        - name: PGPORT
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_PORT
-        - name: POSTGRES_DB
+        - name: PGDATABASE
           valueFrom:
             configMapKeyRef:
               name: common-env
               key: POSTGRES_DB
-        - name: POSTGRES_USER_RO
+        - name: PGUSER
           valueFrom:
             secretKeyRef:
               name: init0-postgresql-ha-pgpool-custom-users
               key: usernames
-        - name: POSTGRES_PASSWORD_RO
+        - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
               name: init0-postgresql-ha-pgpool-custom-users
@@ -101,7 +101,7 @@ spec:
         ports:
         - containerPort: 3000
         image: gimbalabs/postgrest:v8.0.0
-        command: ["sh", "-c", "export PGRST_DB_URI=postgres://${POSTGRES_USER_RO}:${POSTGRES_PASSWORD_RO}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}; /bin/postgrest"]
+        command: ["sh", "-c", "export PGRST_DB_URI=postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}; /bin/postgrest"]
         imagePullPolicy: IfNotPresent
         resources: {}
         volumeMounts:

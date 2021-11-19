@@ -4,12 +4,12 @@ metadata:
   name: koios-configmap
 data:
   initContainer-entrypoint: |
-    while [ -z "$(psql -tA -P pager=off -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c 'SELECT schema_name FROM information_schema.schemata' ${POSTGRES_DB} | grep ^${PGRST_DB_SCHEMA}$)" ]
+    while [ -z "$(psql -tA -P pager=off -c 'SELECT schema_name FROM information_schema.schemata' | grep ^${PGRST_DB_SCHEMA}$)" ]
     do
       sleep 1
     done
     envsubst < /configmap/grant-permissions.sql.tpl > /tmp/grant-permissions.sql
-    psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /tmp/grant-permissions.sql ${POSTGRES_DB}
+    psql -f /tmp/grant-permissions.sql
   grant-permissions.sql.tpl: |
     GRANT SELECT ON ALL TABLES IN SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
     GRANT USAGE ON SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
@@ -35,9 +35,6 @@ data:
 
 
       touch /tmp/.pgpass && export PGPASSFILE=/tmp/.pgpass
-      export PGUSER=${POSTGRES_USER}
-      export PGDATABASE=${POSTGRES_DB}
-      export PGHOST=${POSTGRES_HOST}
       export CONFIG=${CNODE_CONFIG_FILE}
       export BRANCH=${KOIOS_BRANCH}
       export URL_RAW="https://raw.githubusercontent.com/cardano-community/guild-operators/${BRANCH}"

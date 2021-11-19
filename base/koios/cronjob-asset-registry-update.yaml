@@ -50,6 +50,8 @@ spec:
                 secretKeyRef:
                   name: init0-postgresql-ha-postgresql
                   key: postgresql-password
+            - name: PGRST_DB_SCHEMA
+              value: grest
           restartPolicy: Never
           volumes:
           - name: koios-configmap
