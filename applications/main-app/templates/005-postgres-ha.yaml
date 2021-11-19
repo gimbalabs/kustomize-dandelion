@@ -24,7 +24,7 @@ spec:
           replicaCount: 1
           updateStrategyType: OnDelete
           password: {{ .Values.dandelion.db.adminPassword | default "cdbsCHANGEME" }}
-          database: cdbs
+          database: cexplorer
           usePasswordFile: false
           repmgrUsername: repmgruser
           repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
