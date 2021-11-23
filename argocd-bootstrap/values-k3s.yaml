@@ -7,7 +7,7 @@ dandelion:
   logging:
     enabled: true
   mainnet:
-    enabled: false
+    enabled: true
     db:
       adminPassword: "CHANGEME"
       roPassword: "CHANGEME"
