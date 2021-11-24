@@ -8,9 +8,9 @@ data:
   topology-mainnet.json: |  
     {
       "Providers": [
-          { "name": "PEACE-sw",     "addr": "v11.mainnet.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-soltia", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-gc",     "addr": "v11.mainnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",     "addr": "v11.mainnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "RSV",          "addr": "dmn.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
@@ -23,9 +23,9 @@ data:
   topology-testnet.json: |
     {
       "Providers": [
-          { "name": "PEACE-sw",     "addr": "v11.testnet.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-soltia", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-gc",     "addr": "v11.testnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-es", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",     "addr": "v11.testnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "RSV",          "addr": "dtn.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
@@ -55,6 +55,10 @@ data:
     option httpchk
     http-check send meth GET uri /epoch?limit=1 ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
     http-check expect string out_sum
+  koios-api-healthcheck.tpl: |
+    option httpchk
+    http-check send meth GET uri /rpc/tip ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
+    http-check expect string hash
   rosetta-api-healthcheck.tpl: |
     option httpchk
     http-check send meth GET uri / ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}

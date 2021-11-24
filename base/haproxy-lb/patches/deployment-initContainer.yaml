@@ -15,7 +15,7 @@
         - name: NETWORKS
           value: "mainnet testnet"
         - name: APIS
-          value: "graphql-api submit-api explorer-api ogmios-api postgrest-api rosetta-api"
+          value: "graphql-api submit-api explorer-api ogmios-api postgrest-api rosetta-api koios-api"
         - name: HEALTHCHECKS_TEMPLATE_DIR
           value: "/configmap"
         - name: TOPOLOGY_DIR
