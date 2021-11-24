@@ -20,6 +20,7 @@ spec:
   - hosts:
     - explorer-api.testnet.dandelion.link
     #secretName: local-tls
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -138,6 +139,30 @@ spec:
   - hosts:
     - postgrest-api.testnet.dandelion.link
     #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: koios-api
+spec:
+  rules:
+    - host: koios-api.mainnet.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: koios-api
+                port: 
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - koios-api.mainnet.dandelion.link
+    #secretName: dandelion.link-tls
 
 ---
 apiVersion: networking.k8s.io/v1
