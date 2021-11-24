@@ -6,7 +6,7 @@ spec:
   schedule: "*/10 * * * *"
   jobTemplate:
     spec:
-      backoffLimit: 1
+      backoffLimit: 0
       ttlSecondsAfterFinished: 540
       template:
         spec:
