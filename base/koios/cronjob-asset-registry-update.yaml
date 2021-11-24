@@ -12,7 +12,7 @@ spec:
         spec:
           serviceAccountName: koios-deploy-sql
           containers:
-          - name: asset-registry-update
+          - name: koios-asset-registry-update
             command: ["bash", "-x", "/configmap/asset-registry-update"]
             image: gimbalabs/cardano-db-sync:init-container
             volumeMounts:

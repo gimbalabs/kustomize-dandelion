@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: pool-history-cache-update
+  name: koios-pool-history-cache-update
 spec:
   schedule: "*/10 * * * *"
   jobTemplate:
@@ -12,7 +12,7 @@ spec:
         spec:
           serviceAccountName: koios-deploy-sql
           containers:
-          - name: pool-history-cache-update
+          - name: koios-pool-history-cache-update
             command: ["bash", "-x", "/configmap/pool-history-cache-update"]
             image: gimbalabs/cardano-db-sync:init-container
             volumeMounts:
