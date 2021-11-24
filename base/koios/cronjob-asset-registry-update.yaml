@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: asset-registry-update
+  name: koios-asset-registry-update
 spec:
   schedule: "*/10 * * * *"
   jobTemplate:
