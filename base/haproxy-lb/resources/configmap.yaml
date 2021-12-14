@@ -75,7 +75,7 @@ data:
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash -e /configmap/drift-hc.sh
 
-    curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number | grep -q ^[0-9] || ( echo "ERROR: no tip received from graphql-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 ))
+    curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number | grep -q ^[0-9] || ( echo "ERROR: no tip received from graphql-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
   koios-api-hc.sh: |
     #!/usr/bin/env bash
     set -e -o pipefail
