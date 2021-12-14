@@ -1,0 +1,35 @@
+helmCharts:
+- name: haproxy
+  valuesFile: helm-values.yaml
+  releaseName: init0
+  version: 1.7.0
+  repo: https://haproxytech.github.io/helm-charts
+
+secretGenerator:
+- name: self-signed-ssl
+  files:
+  - self-signed-ssl.pem
+
+patches:
+- path: patches/deployment-args.yaml
+  target:
+    kind: DaemonSet
+    name: init0-haproxy
+- path: patches/deployment-command.yaml
+  target:
+    kind: DaemonSet
+    name: init0-haproxy
+- path: patches/deployment-initContainer.yaml
+  target:
+    kind: DaemonSet
+    name: init0-haproxy
+- path: patches/deployment-image.yaml
+  target:
+    kind: DaemonSet
+    name: init0-haproxy
+
+resources:
+- resources/ns.yaml
+- resources/configmap.yaml
+
+namespace: haproxy

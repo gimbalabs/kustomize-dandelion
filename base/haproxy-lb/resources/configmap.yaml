@@ -1,0 +1,222 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dandelion-haproxy-configmap
+data:
+  topology-disabled: |
+          { "name": "TICKR",        "addr": "localhost", "port": 443, "protocol": "https" },
+  topology-mainnet.json: |  
+    {
+      "Providers": [
+          { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",     "addr": "v11.mainnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "RSV",          "addr": "dmn.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
+          { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
+          { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+      ],
+      "Consumers": []
+    }
+
+  topology-testnet.json: |
+    {
+      "Providers": [
+          { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-es", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",     "addr": "v11.testnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "RSV",          "addr": "dtn.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
+          { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
+          { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+      ],
+      "Consumers": []
+    }
+
+  disabled-graphql-api-healthcheck.tpl: |
+    option httpchk
+    http-check send meth GET uri / ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
+    http-check expect rstring GET.query.missing
+  graphql-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/graphql-api-hc.sh
+  submit-api-healthcheck.tpl: |
+    option httpchk
+    http-check send meth POST uri /api/submit/tx ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
+    http-check expect status 415
+  explorer-api-healthcheck.tpl: |
+    option httpchk
+    http-check send meth GET uri /api/txs/last ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
+    http-check expect string cteId
+  ogmios-api-healthcheck.tpl: |
+    option httpchk
+    http-check send meth GET hdr Host ${INGRESS_DOMAIN} hdr Connection Upgrade hdr Upgrade websocket hdr Sec-WebSocket-Key x3JJHMbDL1EzLkh9GBhXDw== hdr Sec-WebSocket-Version 13
+    http-check expect status 101
+  postgrest-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/postgrest-api-hc.sh
+  koios-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/koios-api-hc.sh
+  rosetta-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/rosetta-api-hc.sh
+  drift-hc.sh: |
+    #!/usr/bin/env bash
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed "s|^d.||g")
+    HEALTHCHECK_TIMEOUT=5
+
+    dbtip=$(timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -fL -H "Host: ${HOST_HEADER}" -H "Accept: text/plain" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/block?select=time::text&order=id.desc&limit=1" 2>/dev/null)
+    currtip=$(TZ='UTC' date "+%Y-%m-%d %H:%M:%S")
+    if [[ -n "${dbtip}" ]] ; then
+      [[ $(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) )) -lt 180 ]] && exit 0 || echo "ERROR: Tip too far, eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2
+    else
+      echo "ERROR: Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} (${HOST_HEADER}), could not query tip"
+      exit 1
+    fi
+  graphql-api-hc.sh: |
+    #!/usr/bin/env bash
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash -e /configmap/drift-hc.sh
+    HEALTHCHECK_TIMEOUT=5
+
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number 2>/dev/null | grep -q ^[0-9] || ( echo "ERROR: no tip received from graphql-api (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 1 )
+  koios-api-hc.sh: |
+    #!/usr/bin/env bash
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|koios|postgrest|g') bash -e /configmap/drift-hc.sh
+    HEALTHCHECK_TIMEOUT=5
+
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "ERROR: no tip received from koios-api (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 1 )
+  postgrest-api-hc.sh: |
+    #!/usr/bin/env bash
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|postgrest|postgrest|g') bash -e /configmap/drift-hc.sh
+    HEALTHCHECK_TIMEOUT=5
+
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "ERROR: no tip received from postgrest-api (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 1 )
+  rosetta-api-hc.sh: |
+    #!/usr/bin/env bash
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|rosetta|postgrest|g') bash -e /configmap/drift-hc.sh
+    HEALTHCHECK_TIMEOUT=5
+
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "ERROR: bad response from rosetta-api (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 1 )
+  api-config.json: |
+    {
+      "graphql-api": { "checkInterval": "16s" },
+      "postgrest-api": { "checkInterval": "8s" },
+      "koios-api": { "checkInterval": "8s" },
+      "rosetta-api": { "checkInterval": "20s" },
+      "submit-api": { "checkInterval": "20s" },
+      "explorer-api": { "checkInterval": "20s" },
+      "ogmios-api": { "checkInterval": "20s" }
+    }
+  initContainer-entrypoint: |
+    #!/bin/bash
+
+    rm -f ${CONFIG_OUTPUT_DIR}/dandelion-haproxy.cfg
+    
+    # FRONTEND conf
+    cat > ${CONFIG_OUTPUT_DIR}/dandelion-haproxy.cfg <<EOF
+      frontend main
+        mode http
+        bind :80
+        bind :443 ssl crt /usr/local/etc/ssl/self-signed-ssl.pem
+        http-request redirect scheme https code 301 unless { ssl_fc }
+
+        acl is_upgrade hdr(Connection) -i upgrade
+        acl is_websocket hdr(Upgrade) -i websocket
+    
+        acl valid_hosts hdr(host) -m reg -i (${SUB_DOMAIN}.|)($(echo $APIS | sed 's/ /|/g')).($(echo $NETWORKS | sed 's/ /|/g')).${TOP_DOMAIN}$
+        acl valid_hosts hdr(host) -m reg -i stats-ian.dandelion.link
+        http-request deny if !valid_hosts
+    
+        use_backend %[req.hdr(Host),lower]
+        default_backend no-match
+    EOF
+    
+    # BACKENDS conf
+
+    # stats
+    cat >> ${CONFIG_OUTPUT_DIR}/dandelion-haproxy.cfg <<EOF
+      backend stats-ian.dandelion.link
+        mode http
+        stats enable
+        stats uri /
+        stats hide-version
+        stats refresh 10s
+        stats admin if LOCALHOST
+
+        option http-use-htx
+        http-request use-service prometheus-exporter if { path /metrics }
+    EOF
+
+    for network in ${NETWORKS}
+    do
+    
+      for api in ${APIS}
+      do
+    
+        export FQDN="${SUB_DOMAIN}.${api}.${network}.${TOP_DOMAIN}"
+        export INGRESS_DOMAIN="${api}.${network}.${TOP_DOMAIN}"
+    
+        jq -rc .Providers[] ${TOPOLOGY_DIR}/topology-${network}.json | while read provider
+        do
+          PROVIDER_NAME=$(echo $provider | jq -r .name)
+          PROVIDER_HOST=$(echo $provider | jq -r .addr)
+          PROVIDER_PORT=$(echo $provider | jq -r .port)
+          PROVIDER_PROTO=$(echo $provider | jq -r .protocol)
+          PROVIDER_SNI=$(echo $provider | jq -r .sni)
+
+          API_CHECK_INTERVAL=$(jq -r .\"${api}\".checkInterval /configmap/api-config.json) 
+          if [ "${API_CHECK_INTERVAL}" != "null" ]; then HAPROXY_CHECK_INTERVAL="inter ${API_CHECK_INTERVAL}"; fi
+
+          if [ "${PROVIDER_PROTO}" == "https" ]
+          then
+            if [ ! -z "${PROVIDER_SNI}" ]
+            then
+              SNI_FQDN=${PROVIDER_SNI}
+            else
+              SNI_FQDN=${INGRESS_DOMAIN}
+            fi
+            CHECK="check ${HAPROXY_CHECK_INTERVAL} ssl verify none check-sni ${INGRESS_DOMAIN} sni str(${SNI_FQDN})"
+          else
+            CHECK="check ${HAPROXY_CHECK_INTERVAL}"
+          fi
+          echo "    server ${PROVIDER_NAME}    ${PROVIDER_HOST}:${PROVIDER_PORT} ${CHECK} maxconn ${HAPROXY_MAXCONN_PER_BACKEND} cookie core"
+        done > /tmp/${FQDN}.backends.haproxy.cfg
+        
+      
+        cat > /tmp/${FQDN}.haproxy.cfg <<EOF
+      backend ${FQDN} 
+        mode http
+        balance static-rr
+
+        $(envsubst < ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl)
+    
+        cookie network insert
+        http-request set-header X-Client-IP %[src]
+        http-request set-header X-Forwarded-Host %[req.hdr(Host)]
+        http-request set-header Origin https://${INGRESS_DOMAIN}
+        http-request set-header Host ${INGRESS_DOMAIN}
+        http-response set-header Access-Control-Allow-Origin *
+    
+    $(cat /tmp/${FQDN}.backends.haproxy.cfg)
+    
+    EOF
+
+      cat /tmp/${FQDN}.haproxy.cfg >> ${CONFIG_OUTPUT_DIR}/dandelion-haproxy.cfg
+      done
+    done

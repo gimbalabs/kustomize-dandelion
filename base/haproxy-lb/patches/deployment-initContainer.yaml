@@ -1,0 +1,50 @@
+- op: add
+  path: /spec/template/spec/initContainers
+  value:
+      - name: configure
+        command: ["bash", "-x", "/configmap/initContainer-entrypoint"]
+        image: gimbalabs/cardano-db-sync:init-container
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TOP_DOMAIN
+          value: "dandelion.link"
+        - name: SUB_DOMAIN
+          value: "d"
+        - name: HAPROXY_MAXCONN_PER_BACKEND
+          value: "10"
+        - name: NETWORKS
+          value: "mainnet testnet"
+        - name: APIS
+          value: "graphql-api submit-api explorer-api ogmios-api postgrest-api rosetta-api koios-api"
+        - name: HEALTHCHECKS_TEMPLATE_DIR
+          value: "/configmap"
+        - name: TOPOLOGY_DIR
+          value: "/configmap"
+        - name: CONFIG_OUTPUT_DIR
+          value: "/output"
+        volumeMounts:
+        - name: dandelion-haproxy-configmap
+          mountPath: /configmap
+        - name: extra-conf
+          mountPath: /output
+
+
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: dandelion-haproxy-configmap
+    configMap:
+      name: dandelion-haproxy-configmap
+      defaultMode: 0755
+
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: extra-conf
+    mountPath: /extra-conf
+
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    name: dandelion-haproxy-configmap
+    mountPath: /configmap

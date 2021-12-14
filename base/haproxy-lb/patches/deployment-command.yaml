@@ -1,0 +1,3 @@
+- op: add
+  path: /spec/template/spec/containers/0/command
+  value: ["sh", "-c", "haproxy -W -db -f /usr/local/etc/haproxy/haproxy.cfg -f /extra-conf/dandelion-haproxy.cfg | grep -v WARNING.*exited.with.code.0"] 
