@@ -32,69 +32,32 @@ data:
   graphql-api-healthcheck.tpl: |
     option external-check
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
-    external-check command /configmap/graphql-hc.sh
+    external-check command /configmap/graphql-api-hc.sh
   submit-api-healthcheck.tpl: |
     option httpchk
     http-check send meth POST uri /api/submit/tx ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
     http-check expect status 415
   explorer-api-healthcheck.tpl: |
-    option httpchk
-    http-check send meth GET uri /api/txs/last ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
     http-check expect string cteId
   ogmios-api-healthcheck.tpl: |
     option httpchk
     http-check send meth GET hdr Host ${INGRESS_DOMAIN} hdr Connection Upgrade hdr Upgrade websocket hdr Sec-WebSocket-Key x3JJHMbDL1EzLkh9GBhXDw== hdr Sec-WebSocket-Version 13
     http-check expect status 101
   postgrest-api-healthcheck.tpl: |
-    option httpchk
-    http-check send meth GET uri /epoch?limit=1 ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
-    http-check expect string out_sum
-  koios-api-healthcheck.tpl: |
-    option httpchk
-    http-check send meth GET uri /rpc/tip ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
-    http-check expect string hash
-  rosetta-api-healthcheck.tpl: |
-    option httpchk
-    http-check send meth GET uri / ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
-    http-check expect rstring message.*Route.GET.*404
-  disabled-external-healthcheck: |
     option external-check
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
-    external-check command /configmap/drift-hc.sh
-  grest-poll.sh: |
-    #!/usr/bin/env sh -x
-
-    HOSTNAME=${HAPROXY_SERVER_NAME}
-    dbtip=$(curl -k -fL -H "Host: ${HOSTNAME}" -H "Accept: text/plain" "https://${HOSTNAME}/rpc/tip?select=block_time::text" 2>/dev/null)
-    currtip=$(TZ='UTC' date "+%Y-%m-%d %H:%M:%S")
-    if [[ -n "${dbtip}" ]] ; then
-      [[ $(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) )) -lt 180 ]] && exit 0 || echo "ERROR: Tip too far, eliminating from availability" && exit 2
-    else
-      echo "ERROR: Failed polling for ${3}:${4}, could not query tip"
-      exit 1
-    fi
-  graphql-hc.sh: |
-    #!/usr/bin/env bash
-    set -xe -o pipefail
-    HEALTHCHECK_LOG_FILE=/tmp/$(basename $0).log
-    exec > >(tee ${HEALTHCHECK_LOG_FILE}) 2>&1
-
-    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
-    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash -e /configmap/drift-hc.sh
-
-    TIP=$(curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number)
-    if [[ $TIP = *[[:digit:]]* ]]
-    then
-      exit 0
-    else
-      echo "ERROR: no tip received from graphql"
-      exit 1
-    fi
+    external-check command /configmap/postgrest-api-hc.sh
+  koios-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/koios-api-hc.sh
+  rosetta-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/rosetta-api-hc.sh
   drift-hc.sh: |
     #!/usr/bin/env bash
     set -e -o pipefail
-    HEALTHCHECK_LOG_FILE=/tmp/$(basename $0).log
-    exec > >(tee ${HEALTHCHECK_LOG_FILE}) 2>&1
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed "s|^d.||g")
     dbtip=$(curl -s -k -fL -H "Host: ${HOST_HEADER}" -H "Accept: text/plain" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/block?select=time::text&order=id.desc&limit=1" 2>/dev/null)
@@ -105,9 +68,54 @@ data:
       echo "ERROR: Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} (${HOST_HEADER}), could not query tip"
       exit 1
     fi
+  graphql-api-hc.sh: |
+    #!/usr/bin/env bash
+    set -xe -o pipefail
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash -e /configmap/drift-hc.sh
+
+    TIP=$(curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number)
+    if [[ $TIP = *[[:digit:]]* ]]
+    then
+      exit 0
+    else
+      echo "ERROR: no tip received from graphql-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}"
+      exit 1
+    fi
+  koios-api-hc.sh: |
+    #!/usr/bin/env bash
+    set -xe -o pipefail
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|koios|postgrest|g') bash -e /configmap/drift-hc.sh
+
+    curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "ERROR: no tip received from koios-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}" && exit 1 )
+  postgrest-api-hc.sh: |
+    #!/usr/bin/env bash
+    set -xe -o pipefail
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|postgrest|postgrest|g') bash -e /configmap/drift-hc.sh
+
+    curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "ERROR: no tip received from postgrest-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}" && exit 1 )
+  rosetta-api-hc.sh: |
+    #!/usr/bin/env bash
+    set -xe -o pipefail
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|rosetta|postgrest|g') bash -e /configmap/drift-hc.sh
+
+    curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "ERROR: bad response from rosetta-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
   api-config.json: |
     {
-      "graphql-api": { "checkInterval": "20s" }
+      "graphql-api": { "checkInterval": "16s" }
+      "postgrest-api": { "checkInterval": "8s" }
+      "koios-api": { "checkInterval": "8s" }
+      "rosetta-api": { "checkInterval": "20s" }
+      "submit-api": { "checkInterval": "20s" }
+      "explorer-api": { "checkInterval": "20s" }
+      "ogmios-api": { "checkInterval": "20s" }
     }
   initContainer-entrypoint: |
     #!/bin/bash
