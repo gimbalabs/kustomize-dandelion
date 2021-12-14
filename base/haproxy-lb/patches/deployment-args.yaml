@@ -1,7 +1,2 @@
-- op: replace
+- op: remove
   path: /spec/template/spec/containers/0/args
-  value:
-    - -f
-    - /usr/local/etc/haproxy/haproxy.cfg
-    - -f
-    - /extra-conf/dandelion-haproxy.cfg
