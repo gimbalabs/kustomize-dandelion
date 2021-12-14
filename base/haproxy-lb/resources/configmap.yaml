@@ -38,6 +38,8 @@ data:
     http-check send meth POST uri /api/submit/tx ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
     http-check expect status 415
   explorer-api-healthcheck.tpl: |
+    option httpchk
+    http-check send meth GET uri /api/txs/last ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
     http-check expect string cteId
   ogmios-api-healthcheck.tpl: |
     option httpchk
