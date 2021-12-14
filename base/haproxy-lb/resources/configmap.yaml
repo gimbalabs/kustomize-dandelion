@@ -57,7 +57,7 @@ data:
     external-check command /configmap/rosetta-api-hc.sh
   drift-hc.sh: |
     #!/usr/bin/env bash
-    set -e -o pipefail
+    set -e
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed "s|^d.||g")
     dbtip=$(curl -s -k -fL -H "Host: ${HOST_HEADER}" -H "Accept: text/plain" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/block?select=time::text&order=id.desc&limit=1" 2>/dev/null)
@@ -70,15 +70,15 @@ data:
     fi
   graphql-api-hc.sh: |
     #!/usr/bin/env bash
-    set -e -o pipefail
+    set -e
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash -e /configmap/drift-hc.sh
 
-    curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number | grep -q ^[0-9] || ( echo "ERROR: no tip received from graphql-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
+    curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number 2>/dev/null | grep -q ^[0-9] || ( echo "ERROR: no tip received from graphql-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
   koios-api-hc.sh: |
     #!/usr/bin/env bash
-    set -e -o pipefail
+    set -e
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|koios|postgrest|g') bash -e /configmap/drift-hc.sh
@@ -86,7 +86,7 @@ data:
     curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "ERROR: no tip received from koios-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
   postgrest-api-hc.sh: |
     #!/usr/bin/env bash
-    set -e -o pipefail
+    set -e
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|postgrest|postgrest|g') bash -e /configmap/drift-hc.sh
@@ -94,7 +94,7 @@ data:
     curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "ERROR: no tip received from postgrest-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
   rosetta-api-hc.sh: |
     #!/usr/bin/env bash
-    set -e -o pipefail
+    set -e
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|rosetta|postgrest|g') bash -e /configmap/drift-hc.sh
