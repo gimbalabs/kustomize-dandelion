@@ -109,12 +109,12 @@ data:
     curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "ERROR: bad response from rosetta-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
   api-config.json: |
     {
-      "graphql-api": { "checkInterval": "16s" }
-      "postgrest-api": { "checkInterval": "8s" }
-      "koios-api": { "checkInterval": "8s" }
-      "rosetta-api": { "checkInterval": "20s" }
-      "submit-api": { "checkInterval": "20s" }
-      "explorer-api": { "checkInterval": "20s" }
+      "graphql-api": { "checkInterval": "16s" },
+      "postgrest-api": { "checkInterval": "8s" },
+      "koios-api": { "checkInterval": "8s" },
+      "rosetta-api": { "checkInterval": "20s" },
+      "submit-api": { "checkInterval": "20s" },
+      "explorer-api": { "checkInterval": "20s" },
       "ogmios-api": { "checkInterval": "20s" }
     }
   initContainer-entrypoint: |
