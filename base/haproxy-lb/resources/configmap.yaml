@@ -10,12 +10,7 @@ data:
       "Providers": [
           { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-fr",     "addr": "v11.mainnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",          "addr": "dmn.reservoir.network", "port": 443, "protocol": "https" },
-          { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
-          { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
-          { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+          { "name": "PEACE-fr",     "addr": "v11.mainnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" }
       ],
       "Consumers": []
     }
@@ -25,20 +20,19 @@ data:
       "Providers": [
           { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-fr",     "addr": "v11.testnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",          "addr": "dtn.reservoir.network", "port": 443, "protocol": "https" },
-          { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
-          { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
-          { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+          { "name": "PEACE-fr",     "addr": "v11.testnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" }
       ],
       "Consumers": []
     }
 
-  graphql-api-healthcheck.tpl: |
+  disabled-graphql-api-healthcheck.tpl: |
     option httpchk
     http-check send meth GET uri / ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
     http-check expect rstring GET.query.missing
+  graphql-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/graphql-hc.sh
   submit-api-healthcheck.tpl: |
     option httpchk
     http-check send meth POST uri /api/submit/tx ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
@@ -66,12 +60,12 @@ data:
   disabled-external-healthcheck: |
     option external-check
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
-    external-check command /configmap/grest-poll.sh
+    external-check command /configmap/drift-hc.sh
   grest-poll.sh: |
-    #!/usr/bin/env sh
-    exit 0
-    HOSTNAME=postgrest-api.mainnet.dandelion.link
-    dbtip=$(curl -k -fL -H "Host: ${HOSTNAME}" -H "Accept: text/plain" "https://${3}/rpc/tip?select=block_time::text" 2>/dev/null)
+    #!/usr/bin/env sh -x
+
+    HOSTNAME=${HAPROXY_SERVER_NAME}
+    dbtip=$(curl -k -fL -H "Host: ${HOSTNAME}" -H "Accept: text/plain" "https://${HOSTNAME}/rpc/tip?select=block_time::text" 2>/dev/null)
     currtip=$(TZ='UTC' date "+%Y-%m-%d %H:%M:%S")
     if [[ -n "${dbtip}" ]] ; then
       [[ $(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) )) -lt 180 ]] && exit 0 || echo "ERROR: Tip too far, eliminating from availability" && exit 2
@@ -79,6 +73,42 @@ data:
       echo "ERROR: Failed polling for ${3}:${4}, could not query tip"
       exit 1
     fi
+  graphql-hc.sh: |
+    #!/usr/bin/env bash
+    set -xe -o pipefail
+    HEALTHCHECK_LOG_FILE=/tmp/$(basename $0).log
+    exec > >(tee ${HEALTHCHECK_LOG_FILE}) 2>&1
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash -e /configmap/drift-hc.sh
+
+    TIP=$(curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number)
+    if [[ $TIP = *[[:digit:]]* ]]
+    then
+      exit 0
+    else
+      echo "ERROR: no tip received from graphql"
+      exit 1
+    fi
+  drift-hc.sh: |
+    #!/usr/bin/env bash
+    set -e -o pipefail
+    HEALTHCHECK_LOG_FILE=/tmp/$(basename $0).log
+    exec > >(tee ${HEALTHCHECK_LOG_FILE}) 2>&1
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed "s|^d.||g")
+    dbtip=$(curl -s -k -fL -H "Host: ${HOST_HEADER}" -H "Accept: text/plain" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/block?select=time::text&order=id.desc&limit=1" 2>/dev/null)
+    currtip=$(TZ='UTC' date "+%Y-%m-%d %H:%M:%S")
+    if [[ -n "${dbtip}" ]] ; then
+      [[ $(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) )) -lt 180 ]] && exit 0 || echo "ERROR: Tip too far, eliminating from availability" && exit 2
+    else
+      echo "ERROR: Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} (${HOST_HEADER}), could not query tip"
+      exit 1
+    fi
+  api-config.json: |
+    {
+      "graphql-api": { "checkInterval": "20s" }
+    }
   initContainer-entrypoint: |
     #!/bin/bash
 
@@ -135,6 +165,10 @@ data:
           PROVIDER_PORT=$(echo $provider | jq -r .port)
           PROVIDER_PROTO=$(echo $provider | jq -r .protocol)
           PROVIDER_SNI=$(echo $provider | jq -r .sni)
+
+          API_CHECK_INTERVAL=$(jq -r .\"${api}\".checkInterval /configmap/api-config.json) 
+          if [ "${API_CHECK_INTERVAL}" != "null" ]; then HAPROXY_CHECK_INTERVAL="inter ${API_CHECK_INTERVAL}"; fi
+
           if [ "${PROVIDER_PROTO}" == "https" ]
           then
             if [ ! -z "${PROVIDER_SNI}" ]
@@ -143,9 +177,9 @@ data:
             else
               SNI_FQDN=${INGRESS_DOMAIN}
             fi
-            CHECK="check ssl verify none check-sni ${INGRESS_DOMAIN} sni str(${SNI_FQDN})"
+            CHECK="check ${HAPROXY_CHECK_INTERVAL} ssl verify none check-sni ${INGRESS_DOMAIN} sni str(${SNI_FQDN})"
           else
-            CHECK="check"
+            CHECK="check ${HAPROXY_CHECK_INTERVAL}"
           fi
           echo "    server ${PROVIDER_NAME}    ${PROVIDER_HOST}:${PROVIDER_PORT} ${CHECK} maxconn ${HAPROXY_MAXCONN_PER_BACKEND} cookie core"
         done > /tmp/${FQDN}.backends.haproxy.cfg
@@ -163,6 +197,7 @@ data:
         http-request set-header X-Forwarded-Host %[req.hdr(Host)]
         http-request set-header Origin https://${INGRESS_DOMAIN}
         http-request set-header Host ${INGRESS_DOMAIN}
+        http-response set-header Access-Control-Allow-Origin https://${FQDN}
     
     $(cat /tmp/${FQDN}.backends.haproxy.cfg)
     

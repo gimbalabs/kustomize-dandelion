@@ -19,6 +19,10 @@ patches:
   target:
     kind: DaemonSet
     name: init0-haproxy
+- path: patches/deployment-image.yaml
+  target:
+    kind: DaemonSet
+    name: init0-haproxy
 
 resources:
 - resources/ns.yaml
