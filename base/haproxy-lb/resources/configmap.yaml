@@ -70,7 +70,7 @@ data:
     fi
   graphql-api-hc.sh: |
     #!/usr/bin/env bash
-    set -xe -o pipefail
+    set -e -o pipefail
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash -e /configmap/drift-hc.sh
@@ -80,28 +80,28 @@ data:
     then
       exit 0
     else
-      echo "ERROR: no tip received from graphql-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}"
+      echo "ERROR: no tip received from graphql-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
       exit 1
     fi
   koios-api-hc.sh: |
     #!/usr/bin/env bash
-    set -xe -o pipefail
+    set -e -o pipefail
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|koios|postgrest|g') bash -e /configmap/drift-hc.sh
 
-    curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "ERROR: no tip received from koios-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}" && exit 1 )
+    curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "ERROR: no tip received from koios-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
   postgrest-api-hc.sh: |
     #!/usr/bin/env bash
-    set -xe -o pipefail
+    set -e -o pipefail
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|postgrest|postgrest|g') bash -e /configmap/drift-hc.sh
 
-    curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "ERROR: no tip received from postgrest-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}" && exit 1 )
+    curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "ERROR: no tip received from postgrest-api (${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})" && exit 1 )
   rosetta-api-hc.sh: |
     #!/usr/bin/env bash
-    set -xe -o pipefail
+    set -e -o pipefail
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|rosetta|postgrest|g') bash -e /configmap/drift-hc.sh
