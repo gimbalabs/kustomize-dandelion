@@ -76,53 +76,67 @@ data:
     dbtip=$(timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -fL -H "Host: ${HOST_HEADER}" -H "Accept: text/plain" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/block?select=time::text&order=id.desc&limit=1" 2>/dev/null)
     currtip=$(TZ='UTC' date "+%Y-%m-%d %H:%M:%S")
     if [[ -n "${dbtip}" ]] ; then
-      [[ $(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) )) -lt 180 ]] && exit 0 || echo "ERROR: Tip too far, eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2
+      TIP_DRIFT=$(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) ))
+      if [[ ${TIP_DRIFT} -lt 180 ]]
+      then
+        echo "OK (${HOST_HEADER}): Tip drift: $TIP_DRIFT (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+        exit 0
+      else
+        echo "ERROR (${HOST_HEADER}): Tip too far (${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
+        exit 1
+      fi
     else
       echo "ERROR: Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} (${HOST_HEADER}), could not query tip"
-      exit 1
+      exit 2
     fi
   graphql-api-hc.sh: |
     #!/usr/bin/env bash
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
-    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash -e /configmap/drift-hc.sh
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash /configmap/drift-hc.sh
+    if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number 2>/dev/null | grep -q ^[0-9] || ( echo "ERROR: no tip received from graphql-api (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 1 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number 2>/dev/null | grep -q ^[0-9] || ( echo "ERROR (${HOST_HEADER}): no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
   koios-api-hc.sh: |
     #!/usr/bin/env bash
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
-    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|koios|postgrest|g') bash -e /configmap/drift-hc.sh
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|koios|postgrest|g') bash /configmap/drift-hc.sh
+    if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "ERROR: no tip received from koios-api (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 1 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "ERROR (${HOST_HEADER}): no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
   postgrest-api-hc.sh: |
     #!/usr/bin/env bash
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
-    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|postgrest|postgrest|g') bash -e /configmap/drift-hc.sh
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|postgrest|postgrest|g') bash /configmap/drift-hc.sh
+    if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "ERROR: no tip received from postgrest-api (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 1 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "ERROR (${HOST_HEADER}: no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
   rosetta-api-hc.sh: |
     #!/usr/bin/env bash
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
-    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|rosetta|postgrest|g') bash -e /configmap/drift-hc.sh
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|rosetta|postgrest|g') bash /configmap/drift-hc.sh
+    if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "ERROR: bad response from rosetta-api (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 1 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "ERROR (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
   api-config.json: |
     {
       "graphql-api": { "checkInterval": "16s" },
-      "postgrest-api": { "checkInterval": "8s" },
+      "postgrest-api": { "checkInterval": "8s", "retryOn": "404" },
       "koios-api": { "checkInterval": "8s" },
       "rosetta-api": { "checkInterval": "20s" },
       "submit-api": { "checkInterval": "20s" },
       "explorer-api": { "checkInterval": "20s" },
       "ogmios-api": { "checkInterval": "20s" }
     }
+  dis: |
+      "postgrest-api": { "checkInterval": "8s", "retryOn": "conn-failure empty-response junk-response response-timeout 0rtt-rejected 500 502 503 504 404" },
   initContainer-entrypoint: |
     #!/bin/bash
 
@@ -171,6 +185,10 @@ data:
     
         export FQDN="${SUB_DOMAIN}.${api}.${network}.${TOP_DOMAIN}"
         export INGRESS_DOMAIN="${api}.${network}.${TOP_DOMAIN}"
+        API_CHECK_INTERVAL=$(jq -r .\"${api}\".checkInterval /configmap/api-config.json) 
+        if [ "${API_CHECK_INTERVAL}" != "null" ]; then export HAPROXY_CHECK_INTERVAL="inter ${API_CHECK_INTERVAL}"; else unset HAPROXY_CHECK_INTERVAL; fi
+        RETRY_ON=$(jq -r .\"${api}\".retryOn /configmap/api-config.json) 
+        if [ "${RETRY_ON}" != "null" ]; then export HAPROXY_BACKEND_RETRY_ON="${RETRY_ON}"; else unset HAPROXY_BACKEND_RETRY_ON; fi
     
         jq -rc .Providers[] ${TOPOLOGY_DIR}/topology-${network}.json | while read provider
         do
@@ -180,29 +198,26 @@ data:
           PROVIDER_PROTO=$(echo $provider | jq -r .protocol)
           PROVIDER_SNI=$(echo $provider | jq -r .sni)
 
-          API_CHECK_INTERVAL=$(jq -r .\"${api}\".checkInterval /configmap/api-config.json) 
-          if [ "${API_CHECK_INTERVAL}" != "null" ]; then HAPROXY_CHECK_INTERVAL="inter ${API_CHECK_INTERVAL}"; fi
-
           if [ "${PROVIDER_PROTO}" == "https" ]
           then
-            if [ ! -z "${PROVIDER_SNI}" ]
+            if [ "${PROVIDER_SNI}" != "null" ]
             then
               SNI_FQDN=${PROVIDER_SNI}
             else
               SNI_FQDN=${INGRESS_DOMAIN}
             fi
-            CHECK="check ${HAPROXY_CHECK_INTERVAL} ssl verify none check-sni ${INGRESS_DOMAIN} sni str(${SNI_FQDN})"
+            CHECK="check ${HAPROXY_CHECK_INTERVAL:-inter 20s} ssl verify none check-sni ${INGRESS_DOMAIN} sni str(${SNI_FQDN})"
           else
             CHECK="check ${HAPROXY_CHECK_INTERVAL}"
           fi
           echo "    server ${PROVIDER_NAME}    ${PROVIDER_HOST}:${PROVIDER_PORT} ${CHECK} maxconn ${HAPROXY_MAXCONN_PER_BACKEND} cookie core"
-        done > /tmp/${FQDN}.backends.haproxy.cfg
-        
+        done > /tmp/${FQDN}.backends.haproxy.cfg 
       
         cat > /tmp/${FQDN}.haproxy.cfg <<EOF
       backend ${FQDN} 
         mode http
         balance static-rr
+        retry-on ${HAPROXY_BACKEND_RETRY_ON:-all-retryable-errors}
 
         $(envsubst < ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl)
     
