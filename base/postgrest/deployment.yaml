@@ -14,6 +14,50 @@ spec:
       labels:
         io.kompose.service: postgrest
     spec:
+      initContainers:
+      - name: configure
+        command: ["bash", "-x", "/configmap/create-db-ro-user-entrypoint"]
+        image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST_RW
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-postgresql
+              key: postgresql-password
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
+        volumeMounts:
+        - name: cardano-db-sync-configmap
+          mountPath: /configmap
       containers:
       - name: postgrest
         env:
@@ -51,7 +95,7 @@ spec:
           value: public
         ports:
         - containerPort: 3000
-        image: gimbalabs/postgrest:v8.0.0
+        image: gimbalabs/postgrest:v9.0.0
         command: ["sh", "-c", "export PGRST_DB_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}; /bin/postgrest"]
         imagePullPolicy: IfNotPresent
         resources: {}
@@ -77,4 +121,6 @@ spec:
       - name: postgrest-configmap
         configMap:
           name: postgrest-configmap
-
+      - name: cardano-db-sync-configmap
+        configMap:
+          name: cardano-db-sync-configmap

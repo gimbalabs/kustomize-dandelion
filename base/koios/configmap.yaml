@@ -15,17 +15,44 @@ data:
     GRANT USAGE ON SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
   asset-registry-update: |
-    bash -x /configmap/initContainer-entrypoint
-    curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
-    bash -x asset-registry-update.sh
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*asset-registry-update)
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
+      bash -x asset-registry-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
   pool-history-cache-update: |
-    bash -x /configmap/initContainer-entrypoint
-    curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
-    bash -x pool-history-cache-update.sh
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*pool-history-cache-update)
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
+      bash -x pool-history-cache-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
   stake-distribution-update: |
-    bash -x /configmap/initContainer-entrypoint
-    curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
-    bash -x stake-distribution-update.sh
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*stake-distribution-update)
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
+      bash -x stake-distribution-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
   koios-deploy-sql-entrypoint: |
     function init {
 
@@ -55,11 +82,18 @@ data:
       return 0
     }
 
+    echo -n "[!] Waiting for db-sync to be initialized..."
+    while [[ -z $(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^cardano-db-sync) ]]
+    do
+      echo -n .
+      sleep 20
+    done
+
     echo -n "[!] Waiting for db to reach Mary era if needed..."
     while [[ "$(psql -qtAX -d ${PGDATABASE} -c 'SELECT protocol_major FROM public.param_proposal WHERE protocol_major >= 4 ORDER BY protocol_major DESC LIMIT 1' 2>/dev/null)" == "" ]]
     do
       echo -n .
-      sleep 10
+      sleep 20
     done
 
     setup_db_basics

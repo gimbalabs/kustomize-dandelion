@@ -4,7 +4,6 @@ metadata:
   name: cardano-db-sync-configmap
 data:
   create-db-ro-user-entrypoint: |
-    apt update -qq && apt install -y gettext-base
     while [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
     do
       sleep 1
@@ -12,7 +11,6 @@ data:
     envsubst < /configmap/create-ro-user.sql.tpl > /tmp/create-ro-user.sql
     psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /tmp/create-ro-user.sql ${POSTGRES_DB}
     psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /configmap/extra.sql ${POSTGRES_DB}
-
   create-ro-user.sql.tpl: |
     CREATE ROLE ${POSTGRES_USER_RO};
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER_RO};
