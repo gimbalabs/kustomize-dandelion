@@ -18,8 +18,8 @@ data:
     export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*asset-registry-update)
-    if [ -z "${ALREADY_RUNNING}" ]
+    PODS_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*asset-registry-update | wc -l)
+    if [ ${PODS_RUNNING} -lt 2 ]
     then
       bash -x /configmap/initContainer-entrypoint
       curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
@@ -31,8 +31,8 @@ data:
     export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*pool-history-cache-update)
-    if [ -z "${ALREADY_RUNNING}" ]
+    PODS_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*pool-history-cache-update | wc -l)
+    if [ ${PODS_RUNNING} -lt 2 ]
     then
       bash -x /configmap/initContainer-entrypoint
       curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
@@ -44,8 +44,8 @@ data:
     export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
     NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*stake-distribution-update)
-    if [ -z "${ALREADY_RUNNING}" ]
+    PODS_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*stake-distribution-update | wc -l)
+    if [ ${PODS_RUNNING} -lt 2 ]
     then
       bash -x /configmap/initContainer-entrypoint
       curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
