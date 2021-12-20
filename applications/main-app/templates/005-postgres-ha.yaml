@@ -24,7 +24,7 @@ spec:
           replicaCount: 1
           updateStrategyType: OnDelete
           password: {{ .Values.dandelion.db.adminPassword | default "cdbsCHANGEME" }}
-          database: cdbs
+          database: cexplorer
           usePasswordFile: false
           repmgrUsername: repmgruser
           repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
@@ -46,7 +46,7 @@ spec:
           {{- end }}
         pgpool:
           customUsers:
-            usernames: 'postgrest_ro'
+            usernames: 'dandelion_ro'
             passwords: {{ .Values.dandelion.db.roPassword | default "CHANGEME" }}
         metrics:
           enabled: true
