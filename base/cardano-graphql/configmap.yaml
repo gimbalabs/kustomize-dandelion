@@ -43,10 +43,23 @@ data:
       MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
     fi
 
-    DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
-    echo -n "[+] Waiting for db to reach tip..."
-    while [[ $(cardano-cli query tip ${MAGIC_ARG} | jq -r .syncProgress | awk -F. '{print $1}') -lt 99  ]] && [[ ${DB_EPOCH} -ne $(cardano-cli query tip ${MAGIC_ARG} | jq -r .epoch) ]]
+    DB_BLOCK_NO=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select block_no from block order by id desc limit 1;' ${POSTGRES_DB})
+    test -z "${DB_BLOCK_NO}" && DB_BLOCK_NO=0
+    echo -n "[+] Waiting for cardano-node to reach tip..."
+    while [[ -n $(cardano-cli query tip ${MAGIC_ARG} | jq -r .block) ]] && [ ${DB_BLOCK_NO} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq -r .block) ]
     do
       sleep 60
       echo -n .
     done
+
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+
+    echo -n "[!] Waiting for db-sync to be initialized..."
+    while [[ -z $(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^cardano-db-sync) ]]
+    do
+      echo -n .
+      sleep 20
+    done
+
