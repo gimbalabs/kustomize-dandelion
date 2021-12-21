@@ -5,9 +5,9 @@ git:
 dandelion:
   provider:
     name: null
-  argoProjectSuffix: "-v11-0-4"
-  argoAppSuffix: "-v11-0-4"
-  namespaceSuffix: "-v11-0-4"
+  argoProjectSuffix: "-v12-0-0"
+  argoAppSuffix: "-v12-0-0"
+  namespaceSuffix: "-v12-0-0"
   ingressBaseDomain: null
   ingressAlternativeDomain: null
   multiNode: false
