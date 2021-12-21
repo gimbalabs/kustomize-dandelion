@@ -10,7 +10,7 @@ data:
       "Providers": [
           { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-fr",     "addr": "v11.mainnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-de",     "addr": "contabo-1.de.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "RSV",          "addr": "dmn.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
@@ -25,7 +25,7 @@ data:
       "Providers": [
           { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-fr",     "addr": "v11.testnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-de",     "addr": "contabo-1.de.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "RSV",          "addr": "dtn.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
