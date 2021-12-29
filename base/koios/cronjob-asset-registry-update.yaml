@@ -50,6 +50,16 @@ spec:
                 secretKeyRef:
                   name: init0-postgresql-ha-postgresql
                   key: postgresql-password
+            - name: POSTGRES_USER_RO
+              valueFrom:
+                secretKeyRef:
+                  name: init0-postgresql-ha-pgpool-custom-users
+                  key: usernames
+            - name: POSTGRES_PASSWORD_RO
+              valueFrom:
+                secretKeyRef:
+                  name: init0-postgresql-ha-pgpool-custom-users
+                  key: passwords
             - name: PGRST_DB_SCHEMA
               value: grest
           restartPolicy: Never
