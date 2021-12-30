@@ -2,8 +2,8 @@
 
 * Kubernetes. For local k8s development environment, we encourage you to use [k3s]/[k3d] lightweight k8s distro. Note you need to use k8s <=v1.21 by the moment. 
 * [kubectl]
-* [Kustomize] (greater than v4.1)
-* [helm]
+* [Kustomize] (>=v4.2)
+* [helm] (>=3.5.3)
 * `bash`. If you are using MacOS to deploy using k3d on docker, you will find problems using `zsh` as shell while copy pasting :)
 
 # Local deployment
@@ -108,7 +108,7 @@ NAMESPACE=dandelion-${NETWORK}
 kubectl apply -n ${NAMESPACE} -f base/dandelion-${NETWORK}-public-ingresses/ingress.yaml
 ```
 * Deploy mainnet ingresses:
-```
+```greater than 
 NETWORK=mainnet
 NAMESPACE=dandelion-${NETWORK}
 kubectl apply -n ${NAMESPACE} -f base/dandelion-${NETWORK}-public-ingresses/ingress.yaml
