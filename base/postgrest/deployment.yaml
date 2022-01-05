@@ -17,7 +17,7 @@ spec:
       initContainers:
       - name: configure
         command: ["bash", "-x", "/configmap/create-db-ro-user-entrypoint"]
-        image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+        image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
         imagePullPolicy: IfNotPresent
         env:
         - name: POSTGRES_HOST
