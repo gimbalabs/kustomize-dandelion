@@ -62,6 +62,10 @@ spec:
                   key: passwords
             - name: PGRST_DB_SCHEMA
               value: grest
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           restartPolicy: Never
           volumes:
           - name: koios-configmap
