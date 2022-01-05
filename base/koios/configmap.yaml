@@ -27,6 +27,15 @@ data:
     else
       echo "[!] Previous cronjob job already running, skipping..."
     fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-asset-registry-update.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]'
+    done
+
   pool-history-cache-update: |
     export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
@@ -40,6 +49,15 @@ data:
     else
       echo "[!] Previous cronjob job already running, skipping..."
     fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-pool-history-cache-update.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]'
+    done
+
   stake-distribution-update: |
     export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
@@ -53,6 +71,15 @@ data:
     else
       echo "[!] Previous cronjob job already running, skipping..."
     fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-stake-distribution-update.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]'
+    done
+
   koios-deploy-sql-entrypoint: |
     function init {
 
