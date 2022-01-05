@@ -10,8 +10,7 @@ spec:
       containers:
       - name: create-db-ro-user
         command: ["bash", "-x", "/configmap/create-db-ro-user-entrypoint"]
-        # TODO: add envsubst (gettext-base pkg) depend to this image (or use a diff one)
-        image: bitnami/postgresql-repmgr:11.9.0-debian-10-r10
+        image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0
