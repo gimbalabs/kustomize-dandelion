@@ -48,18 +48,18 @@ spec:
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: init0-postgresql-ha-postgresql
-              key: postgresql-password
+              name: init0-postgresql
+              key: postgresql-postgres-password
         - name: POSTGRES_USER_RO
           valueFrom:
-            secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: usernames
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER_RO
         - name: POSTGRES_PASSWORD_RO
           valueFrom:
             secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: passwords
+              name: init0-postgresql
+              key: postgresql-password
         volumeMounts:
         - name: koios-configmap
           mountPath: /configmap
@@ -83,19 +83,19 @@ spec:
               key: POSTGRES_DB
         - name: PGUSER
           valueFrom:
-            secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: usernames
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER_RO
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: passwords
+              name: init0-postgresql
+              key: postgresql-password
         - name: PGRST_DB_ANON_ROLE
           valueFrom:
-            secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: usernames
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER_RO
         - name: PGRST_DB_SCHEMA
           value: grest
         - name: PGRST_MAX_ROWS
@@ -110,21 +110,12 @@ spec:
         - name: common-env
           mountPath: /run/secrets/common-env
           readOnly: true
-        - name: postgres-password
-          mountPath: /run/secrets/postgres-password
-          readOnly: true
       restartPolicy: Always
       serviceAccountName: ""
       volumes:
       - name: common-env
         configMap:
           name: common-env
-      - name: postgres-password
-        secret:
-          secretName: init0-postgresql-ha-pgpool-custom-users
-          items:
-          - key: passwords
-            path: POSTGREST_RO_PASSWORD
       - name: koios-configmap
         configMap:
           name: koios-configmap

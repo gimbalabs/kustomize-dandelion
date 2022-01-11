@@ -3,9 +3,9 @@ kind: ConfigMap
 metadata:
   name: common-env
 data:
-  POSTGRES_HOST: init0-postgresql-ha-postgresql
-  POSTGRES_HOST_RO: init0-postgresql-ha-postgresql
-  POSTGRES_HOST_RW: init0-postgresql-ha-postgresql
+  POSTGRES_HOST: init0-postgresql-headless
+  POSTGRES_HOST_RO: init0-postgresql-headless
+  POSTGRES_HOST_RW: init0-postgresql-headless
   POSTGRES_PORT: "5432"
   POSTGRES_DB: cexplorer
   POSTGRES_USER: postgres

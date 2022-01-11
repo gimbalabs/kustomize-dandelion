@@ -34,5 +34,13 @@ patches:
 - path: patches/postgres-ha-pvc.yaml
   target:
     kind: StatefulSet
-    name: init0-postgresql-ha-postgresql
-
+    name: init0-postgresql
+- path: patches/remove-namespace.yaml
+  target:
+    name: init0-postgresql
+- path: patches/remove-namespace.yaml
+  target:
+    name: init0-postgresql-headless
+- path: patches/remove-namespace.yaml
+  target:
+    name: init0-postgresql-extended-configuration

@@ -50,14 +50,14 @@ spec:
               key: POSTGRES_PORT
         - name: POSTGRES_USER
           valueFrom:
-            secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: usernames
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER_RO
         - name: POSTGRES_PASS
           valueFrom:
             secretKeyRef:
-              name: init0-postgresql-ha-pgpool-custom-users
-              key: passwords
+              name: init0-postgresql
+              key: postgresql-password
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
@@ -108,9 +108,3 @@ spec:
       - name: common-env
         configMap:
           name: common-env
-      - name: postgres-password
-        secret:
-          secretName: init0-postgresql-ha-pgpool-custom-users
-          items:
-          - key: passwords
-            path: POSTGREST_RO_PASSWORD

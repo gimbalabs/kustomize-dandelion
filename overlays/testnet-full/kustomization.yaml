@@ -8,7 +8,7 @@ commonAnnotations:
 
 bases:
 - ../testnet-base
-- ../../base/helm-charts/postgres-ha
+- ../../base/helm-charts/postgresql
 - ../../base/cardano-db-sync
 - ../../base/cardano-graphql
 - ../../base/cardano-hasura

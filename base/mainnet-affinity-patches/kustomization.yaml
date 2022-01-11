@@ -33,7 +33,7 @@ patches:
 - path: patches/db-main-affinity.yaml
   target:
     kind: StatefulSet
-    name: init0-postgresql-ha-postgresql
+    name: init0-postgresql
 - path: patches/db-main-affinity.yaml
   target:
     kind: Deployment
