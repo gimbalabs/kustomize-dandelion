@@ -12,7 +12,8 @@ data:
           { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-de",     "addr": "contabo-1.de.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",          "addr": "dmn.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV",          "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV-2",        "addr": "dandelion2.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
           { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
           { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
@@ -27,7 +28,8 @@ data:
           { "name": "PEACE-es", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-de",     "addr": "contabo-1.de.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",          "addr": "dtn.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV",          "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV-2",        "addr": "dandelion2.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
           { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
           { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
@@ -47,6 +49,9 @@ data:
     option httpchk
     http-check send meth POST uri /api/submit/tx ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
     http-check expect status 415
+#    option external-check
+#    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+#    external-check command /configmap/submit-api-hc.sh
   explorer-api-healthcheck.tpl: |
     option httpchk
     http-check send meth GET uri /api/txs/last ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
@@ -72,17 +77,18 @@ data:
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed "s|^d.||g")
     HEALTHCHECK_TIMEOUT=5
+    MAX_DRIFT=${CARDANO_MAX_TIP_DRIFT:-600}
 
     dbtip=$(timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -fL -H "Host: ${HOST_HEADER}" -H "Accept: text/plain" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/block?select=time::text&order=id.desc&limit=1" 2>/dev/null)
     currtip=$(TZ='UTC' date "+%Y-%m-%d %H:%M:%S")
     if [[ -n "${dbtip}" ]] ; then
       TIP_DRIFT=$(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) ))
-      if [[ ${TIP_DRIFT} -lt 180 ]]
+      if [[ ${TIP_DRIFT} -lt ${MAX_DRIFT} ]]
       then
-        echo "OK (${HOST_HEADER}): Tip drift: $TIP_DRIFT (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+        echo "OK (${HOST_HEADER}): Tip ok (last block timestamp: ${dbtip}, tip-drift: -${TIP_DRIFT}) (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
         exit 0
       else
-        echo "ERROR (${HOST_HEADER}): Tip too far (${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
+        echo "ERROR (${HOST_HEADER}): Tip too far (last block timestamp: ${dbtip}, tip-drift: -${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
         exit 1
       fi
     else
@@ -125,6 +131,16 @@ data:
     HEALTHCHECK_TIMEOUT=5
 
     timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "ERROR (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+  submit-api-hc.sh: |
+    #!/usr/bin/env bash
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|submit|postgrest|g') bash /configmap/drift-hc.sh
+    if [ $? -ne 0 ]; then exit 1; fi
+    HEALTHCHECK_TIMEOUT=5
+
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number 2>/dev/null | grep -q ^[0-9] || ( echo "ERROR (${HOST_HEADER}): no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+
   api-config.json: |
     {
       "graphql-api": { "checkInterval": "16s" },

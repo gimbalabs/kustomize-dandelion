@@ -12,6 +12,8 @@
           value: "d"
         - name: HAPROXY_MAXCONN_PER_BACKEND
           value: "10"
+        - name: CARDANO_MAX_TIP_DRIFT
+          value: 600
         - name: NETWORKS
           value: "mainnet testnet"
         - name: APIS
