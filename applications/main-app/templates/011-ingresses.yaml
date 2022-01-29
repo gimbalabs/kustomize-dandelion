@@ -1,6 +1,6 @@
 {{ if .Values.dandelion.deployIngress }}
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: cardano-submit-api
@@ -11,17 +11,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: cardano-submit-api
-              servicePort: 8091
+              service:
+                name: cardano-submit-api
+                port:
+                  number: 8091
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "submit-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: cardano-submit-api
-              servicePort: 8091
+              service:
+                name: cardano-submit-api
+                port:
+                  number: 8091
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
