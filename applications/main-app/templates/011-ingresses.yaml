@@ -39,7 +39,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: cardano-graphql-api
@@ -50,17 +50,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: cardano-graphql
-              servicePort: 3100
+              service:
+                name: cardano-graphql
+                port:
+                  number: 3100
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "graphql-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: cardano-graphql
-              servicePort: 3100
+              service:
+                name: cardano-graphql
+                port:
+                  number: 3100
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
@@ -72,7 +78,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: chisel-api
@@ -83,17 +89,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: chisel-server
-              servicePort: 40000
+              service:
+                name: chisel-server
+                port:
+                  number: 40000
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "chisel-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: chisel-server
-              servicePort: 40000
+              service:
+                name: chisel-server
+                port:
+                  number: 40000
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
