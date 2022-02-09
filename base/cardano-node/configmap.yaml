@@ -28,6 +28,7 @@ data:
       "PBftSignatureThreshold": 0.9,
       "NetworkName": "mainnet",
       "MaxConcurrencyDeadline": 2,
+      "MempoolCapacityBytesOverride": 256000000,
       "NumCoreNodes": 2,
       "Protocol": "Cardano",
       "RequiresNetworkMagic": "RequiresNoMagic",

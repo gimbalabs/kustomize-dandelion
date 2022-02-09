@@ -1,6 +1,6 @@
 {{ if .Values.dandelion.deployIngress }}
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: cardano-submit-api
@@ -11,17 +11,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: cardano-submit-api
-              servicePort: 8091
+              service:
+                name: cardano-submit-api
+                port:
+                  number: 8091
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "submit-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: cardano-submit-api
-              servicePort: 8091
+              service:
+                name: cardano-submit-api
+                port:
+                  number: 8091
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
@@ -33,7 +39,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: cardano-graphql-api
@@ -44,17 +50,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: cardano-graphql
-              servicePort: 3100
+              service:
+                name: cardano-graphql
+                port:
+                  number: 3100
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "graphql-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: cardano-graphql
-              servicePort: 3100
+              service:
+                name: cardano-graphql
+                port:
+                  number: 3100
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
@@ -66,7 +78,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: chisel-api
@@ -77,17 +89,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: chisel-server
-              servicePort: 40000
+              service:
+                name: chisel-server
+                port:
+                  number: 40000
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "chisel-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: chisel-server
-              servicePort: 40000
+              service:
+                name: chisel-server
+                port:
+                  number: 40000
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
@@ -99,7 +117,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ogmios-api
@@ -110,17 +128,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: ogmios
-              servicePort: 1337
+              service:
+                name: ogmios
+                port:
+                  number: 1337
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "ogmios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: ogmios
-              servicePort: 1337
+              service:
+                name: ogmios
+                port:
+                  number: 1337
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
@@ -132,7 +156,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: postgrest-api
@@ -143,17 +167,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: postgrest
-              servicePort: 3000
+              service:
+                name: postgrest
+                port:
+                  number: 3000
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "postgrest-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: postgrest
-              servicePort: 3000
+              service:
+                name: postgrest
+                port:
+                  number: 3000
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
@@ -165,7 +195,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: koios-api
@@ -176,17 +206,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: koios-api
-              servicePort: 3000
+              service:
+                name: koios-api
+                port:
+                  number: 3000
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "koios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: koios-api
-              servicePort: 3000
+              service:
+                name: koios-api
+                port:
+                  number: 3000
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
@@ -198,7 +234,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: rosetta-api
@@ -209,17 +245,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: cardano-rosetta
-              servicePort: 8080
+              service:
+                name: cardano-rosetta
+                port:
+                  number: 8080
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "rosetta-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: cardano-rosetta
-              servicePort: 8080
+              service:
+                name: cardano-rosetta
+                port:
+                  number: 8080
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
@@ -231,7 +273,7 @@ spec:
       #secretName: local-tls
 
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: postgresws-api
@@ -242,17 +284,23 @@ spec:
       http:
         paths:
           - backend:
-              serviceName: postgres-ws
-              servicePort: 3000
+              service:
+                name: postgres-ws
+                port:
+                  number: 3000
             path: /
+            pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
     - host: "postgresws-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
-              serviceName: postgres-ws
-              servicePort: 3000
+              service:
+                name: postgres-ws
+                port:
+                  number: 3000
             path: /
+            pathType: Prefix
     {{- end }}
   # This section is only required if TLS is to be enabled for the Ingress
   tls:

@@ -14,7 +14,7 @@ spec:
           containers:
           - name: koios-stake-distribution-update
             command: ["bash", "-x", "/configmap/stake-distribution-update"]
-            image: gimbalabs/cardano-db-sync:init-container
+            image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
             volumeMounts:
             - name: koios-configmap
               mountPath: /configmap
@@ -50,8 +50,22 @@ spec:
                 secretKeyRef:
                   name: init0-postgresql-ha-postgresql
                   key: postgresql-password
+            - name: POSTGRES_USER_RO
+              valueFrom:
+                secretKeyRef:
+                  name: init0-postgresql-ha-pgpool-custom-users
+                  key: usernames
+            - name: POSTGRES_PASSWORD_RO
+              valueFrom:
+                secretKeyRef:
+                  name: init0-postgresql-ha-pgpool-custom-users
+                  key: passwords
             - name: PGRST_DB_SCHEMA
               value: grest
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           restartPolicy: Never
           volumes:
           - name: koios-configmap

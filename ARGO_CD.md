@@ -25,12 +25,12 @@ Feel free to customize the `argocd-bootstrap/values-${PROVIDER}.yaml` file enabl
 -> **NOTE**: This snippet assumes you have `htpasswd` cli tool (`apache2-utils` package in Ubuntu), if you don't have it or can't install iy, please check section below on how to set a custom password to access ArgoCD.
 
 ```shell
+cd argocd-bootstrap
+
 APP_PROVIDER=k3s
 
 export ARGOCD_PASSWORD=CH4NG3@M3
 export ARGOCD_HASHED_PASSWORD=$(htpasswd -nbBC 10 null $ARGOCD_PASSWORD | sed 's|null:\(.*\)|\1|g')
-
-cd argocd-bootstrap
 
 helm dependency update
 helm dependency build
@@ -41,7 +41,8 @@ helm upgrade \
     --install argocd \
     --set "argo-cd.configs.secret.argocdServerAdminPassword=${ARGOCD_HASHED_PASSWORD}" \
     --set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
-    -f values-k3s.yaml \
+    -f values-scaleway.yaml \
+    -f values-scaleway-stakeboard.yaml \
     .
 ```
 

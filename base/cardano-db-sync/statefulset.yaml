@@ -23,7 +23,7 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0
-        image: gimbalabs/cardano-db-sync:init-container
+        image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
         imagePullPolicy: IfNotPresent
         env:
         - name: CARDANO_NODE_SOCKET_TCP_HOST
@@ -37,9 +37,9 @@ spec:
         - name: RESTORE_SNAPSHOT
           value: "true"
         - name: DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI
-          value: "s3://updates-cardano-testnet/cardano-db-sync/11/"
+          value: "s3://updates-cardano-testnet/cardano-db-sync/12/"
         - name: DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI
-          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/11/"
+          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/12/"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:

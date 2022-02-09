@@ -10,9 +10,10 @@ data:
       "Providers": [
           { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-fr",     "addr": "v11.mainnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-de",     "addr": "contabo-1.de.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",          "addr": "dmn.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV",          "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV-2",        "addr": "dandelion2.reservoir.network", "port": 5001, "protocol": "https" },
           { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
           { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
           { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
@@ -25,9 +26,10 @@ data:
       "Providers": [
           { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-fr",     "addr": "v11.testnet.gc.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-de",     "addr": "contabo-1.de.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",          "addr": "dtn.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV",          "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV-2",        "addr": "dandelion2.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
           { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
           { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
@@ -44,17 +46,17 @@ data:
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
     external-check command /configmap/graphql-api-hc.sh
   submit-api-healthcheck.tpl: |
-    option httpchk
-    http-check send meth POST uri /api/submit/tx ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
-    http-check expect status 415
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/submit-api-hc.sh
   explorer-api-healthcheck.tpl: |
     option httpchk
     http-check send meth GET uri /api/txs/last ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
     http-check expect string cteId
   ogmios-api-healthcheck.tpl: |
-    option httpchk
-    http-check send meth GET hdr Host ${INGRESS_DOMAIN} hdr Connection Upgrade hdr Upgrade websocket hdr Sec-WebSocket-Key x3JJHMbDL1EzLkh9GBhXDw== hdr Sec-WebSocket-Version 13
-    http-check expect status 101
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/ogmios-hc.sh
   postgrest-api-healthcheck.tpl: |
     option external-check
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
@@ -72,17 +74,18 @@ data:
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed "s|^d.||g")
     HEALTHCHECK_TIMEOUT=5
+    MAX_DRIFT=${CARDANO_MAX_TIP_DRIFT:-600}
 
     dbtip=$(timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -fL -H "Host: ${HOST_HEADER}" -H "Accept: text/plain" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/block?select=time::text&order=id.desc&limit=1" 2>/dev/null)
     currtip=$(TZ='UTC' date "+%Y-%m-%d %H:%M:%S")
     if [[ -n "${dbtip}" ]] ; then
       TIP_DRIFT=$(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) ))
-      if [[ ${TIP_DRIFT} -lt 180 ]]
+      if [[ ${TIP_DRIFT} -lt ${MAX_DRIFT} ]]
       then
-        echo "OK (${HOST_HEADER}): Tip drift: $TIP_DRIFT (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+        echo "OK (${HOST_HEADER}): Tip ok (last block timestamp: ${dbtip}, tip-drift: -${TIP_DRIFT}) (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
         exit 0
       else
-        echo "ERROR (${HOST_HEADER}): Tip too far (${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
+        echo "ERROR (${HOST_HEADER}): Tip too far (last block timestamp: ${dbtip}, tip-drift: -${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
         exit 1
       fi
     else
@@ -125,6 +128,57 @@ data:
     HEALTHCHECK_TIMEOUT=5
 
     timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "ERROR (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+
+  submit-api-hc.sh: |
+    #!/usr/bin/env bash
+
+    HEALTHCHECK_TIMEOUT=5
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|submit|ogmios|g') bash /configmap/ogmios-hc.sh
+    if [ $? -ne 0 ]; then exit 1; fi
+
+    HTTP_STATUS=$(timeout ${HEALTHCHECK_TIMEOUT} curl -w %{http_code} -ks -o /dev/null -H "Host: ${HOST_HEADER}" -X POST https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/api/submit/tx)
+    if [ ${HTTP_STATUS} -ne 415 ]
+    then
+      exit 2
+    fi
+
+  ogmios-hc.sh: |
+    #!/usr/bin/env bash
+
+    HEALTHCHECK_TIMEOUT=5
+    MAX_DRIFT=${CARDANO_MAX_TIP_DRIFT:-600}
+    MIN_NETWORK_SYNC="0.99995"
+
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+
+    networkSynchronization=$(timeout ${HEALTHCHECK_TIMEOUT} curl -ks -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/health | jq -r .networkSynchronization)
+
+    if [ 1 -eq "$(echo "${networkSynchronization} < ${MIN_NETWORK_SYNC}" | bc)" ]
+    then
+      echo "ERROR ($HOST_HEADER): Network Synchronization is ${networkSynchronization}, less than the required ${MIN_NETWORK_SYNC} (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+      exit 1
+    fi
+
+    ogmiosLastTipUpdate=$(timeout ${HEALTHCHECK_TIMEOUT} curl -ks -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/health | jq -r .lastTipUpdate)
+
+    currtip=$(TZ='UTC' date "+%Y-%m-%d %H:%M:%S")
+    if [[ -n "${ogmiosLastTipUpdate}" ]] ; then
+      TIP_DRIFT=$(( $(date -d "${currtip}" +%s) - $(date -d "${ogmiosLastTipUpdate}" +%s) ))
+      if [[ ${TIP_DRIFT} -lt ${MAX_DRIFT} ]]
+      then
+        echo "OK (${HOST_HEADER}}: Tip ok (last block timestamp: ${ogmiosLastTipUpdate}, tip-drift: -${TIP_DRIFT}) (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+        exit 0
+      else
+        echo "ERROR (${HOST_HEADER}): Tip too far (last block timestamp: ${ogmiosLastTipUpdate}, tip-drift: -${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
+        exit 1
+      fi
+    else
+      echo "ERROR (${HOST_HEADER}): Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, could not query tip"
+      exit 2
+    fi
+
+
   api-config.json: |
     {
       "graphql-api": { "checkInterval": "16s" },

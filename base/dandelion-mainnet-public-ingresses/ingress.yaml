@@ -144,10 +144,10 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: koios-api
+  name: public-koios-api
 spec:
   rules:
-    - host: koios-api.testnet.dandelion.link
+    - host: koios-api.mainnet.dandelion.link
       http:
         paths:
           - backend:
@@ -161,7 +161,7 @@ spec:
   # This section is only required if TLS is to be enabled for the Ingress
   tls:
   - hosts:
-    - koios-api.testnet.dandelion.link
+    - koios-api.mainnet.dandelion.link
     #secretName: dandelion.link-tls
 
 ---

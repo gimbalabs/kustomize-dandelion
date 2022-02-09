@@ -49,7 +49,7 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
-        image: inputoutput/cardano-graphql-hasura:5.1.0
+        image: inputoutput/cardano-graphql-hasura:6.1.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

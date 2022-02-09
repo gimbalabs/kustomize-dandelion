@@ -4,7 +4,6 @@ metadata:
   name: cardano-db-sync-configmap
 data:
   create-db-ro-user-entrypoint: |
-    apt update -qq && apt install -y gettext-base
     while [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
     do
       sleep 1
@@ -12,7 +11,6 @@ data:
     envsubst < /configmap/create-ro-user.sql.tpl > /tmp/create-ro-user.sql
     psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /tmp/create-ro-user.sql ${POSTGRES_DB}
     psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /configmap/extra.sql ${POSTGRES_DB}
-
   create-ro-user.sql.tpl: |
     CREATE ROLE ${POSTGRES_USER_RO};
     GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER_RO};
@@ -125,10 +123,10 @@ data:
         fi
       fi
     fi
-    DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
-    test -z "${DB_EPOCH}" && DB_EPOCH=0
+    DB_BLOCK_NO=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select block_no from block order by id desc limit 1;' ${POSTGRES_DB})
+    test -z "${DB_BLOCK_NO}" && DB_BLOCK_NO=0
     echo -n "[+] Waiting for cardano-node to reach tip..."
-    while [[ -n $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]] && [ ${DB_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
+    while [[ -n $(cardano-cli query tip ${MAGIC_ARG} | jq -r .block) ]] && [ ${DB_BLOCK_NO} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq -r .block) ]
     do
       sleep 60
       echo -n .
