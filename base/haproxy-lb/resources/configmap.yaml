@@ -89,7 +89,7 @@ data:
         exit 1
       fi
     else
-      echo "ERROR: Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} (${HOST_HEADER}), could not query tip"
+      echo "ERROR (${HOST_HEADER}): Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, could not query tip"
       exit 2
     fi
   graphql-api-hc.sh: |
