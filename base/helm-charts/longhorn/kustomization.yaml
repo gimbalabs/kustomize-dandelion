@@ -1,0 +1,19 @@
+resources:
+- resources/ns.yaml
+
+helmCharts:
+- name: longhorn
+  valuesFile: helm-values.yaml
+  releaseName: init0
+  namespace: longhorn-system
+  version: 1.2.4
+  repo: https://charts.longhorn.io
+
+patchesStrategicMerge:
+- |-
+  apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: longhorn-uninstall
+    namespace: longhorn-system
+  $patch: delete
