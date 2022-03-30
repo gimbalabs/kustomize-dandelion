@@ -142,5 +142,10 @@ data:
     then
       exit 0
     else
-      tail -n10 /tmp/db-sync-log-tail | grep -q "insertByronBlock\|insert.*Block.*epoch.*slot.*block.*hash\|getHistoryInterpreter\|Finishing epoch\|Starting epoch"
+      grep -q "libpq.*failed.*no connection to the server" /tmp/db-sync-log-tail
+      if [ $? -eq 0 ]
+      then
+        echo "[!] Postgres connection lost, failing healthcheck..."
+        exit 1
+      fi
     fi

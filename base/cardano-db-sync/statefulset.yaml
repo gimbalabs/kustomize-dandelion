@@ -137,12 +137,12 @@ spec:
           mountPath: /var/lib/cdbsync
         - name: cardano-db-sync-configmap
           mountPath: /configmap
-#        livenessProbe:
-#          exec:
-#            command: ["bash", "/configmap/liveness-healthcheck"]
-#          initialDelaySeconds: 600
-#          periodSeconds: 60
-#          timeoutSeconds: 120
+        livenessProbe:
+          exec:
+            command: ["bash", "/configmap/liveness-healthcheck"]
+          initialDelaySeconds: 600
+          periodSeconds: 60
+          timeoutSeconds: 120
       - name: socat-socket-server
         image: alpine/socat
         env:
