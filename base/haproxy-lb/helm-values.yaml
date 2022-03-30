@@ -158,6 +158,24 @@ config: |
     mode http
     http-request deny deny_status 400
 
+  resolvers resolvconf
+    parse-resolv-conf
+    # How long to "hold" a backend server's up/down status depending on the name resolution status.
+    # For example, if an NXDOMAIN response is returned, keep the backend server in its current state (up) for
+    # at least another 30 seconds before marking it as down due to DNS not having a record for it.
+    hold valid    10s
+    hold other    30s
+    hold refused  30s
+    hold nx       30s
+    hold timeout  30s
+    hold obsolete 30s
+    # How many times to retry a query
+    resolve_retries 3
+    # How long to wait between retries when no valid response has been received
+    timeout retry 1s
+    # How long to wait for a successful resolution
+    timeout resolve 1s
+
 ## Additional secrets to mount as volumes
 ## This is expected to be an array of dictionaries specifying the volume name, secret name and mount path
 #mountedSecrets: []

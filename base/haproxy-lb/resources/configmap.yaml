@@ -264,7 +264,7 @@ data:
           else
             CHECK="check ${HAPROXY_CHECK_INTERVAL}"
           fi
-          echo "    server ${PROVIDER_NAME}    ${PROVIDER_HOST}:${PROVIDER_PORT} ${CHECK} maxconn ${HAPROXY_MAXCONN_PER_BACKEND} cookie core"
+          echo "    server ${PROVIDER_NAME}    ${PROVIDER_HOST}:${PROVIDER_PORT} ${CHECK} maxconn ${HAPROXY_MAXCONN_PER_BACKEND} cookie core init-addr none resolvers resolvconf"
         done > /tmp/${FQDN}.backends.haproxy.cfg 
       
         cat > /tmp/${FQDN}.haproxy.cfg <<EOF
