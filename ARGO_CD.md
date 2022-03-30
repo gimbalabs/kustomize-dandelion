@@ -42,7 +42,7 @@ helm upgrade \
     --set "argo-cd.configs.secret.argocdServerAdminPassword=${ARGOCD_HASHED_PASSWORD}" \
     --set "argo-cd.configs.secret.argocdServerAdminPasswordMtime=$(date +%FT%T%Z)" \
     -f values-scaleway.yaml \
-    -f values-scaleway-stakeboard.yaml \
+    -f values-scaleway-bwlabs.yaml \
     .
 ```
 
