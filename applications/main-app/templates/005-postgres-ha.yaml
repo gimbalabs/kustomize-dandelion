@@ -30,13 +30,13 @@ spec:
           repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
           repmgrDatabase: repmgrdatabase
           extraVolumes:
-            - name: pgsql_tmp
+            - name: pgsql-tmp
               emptyDir: {}
             - name: shm
               emptyDir: {}
           extraVolumeMounts:
             - mountPath: /bitnami/postgresql/data/base/pgsql_tmp
-              name: pgsql_tmp
+              name: pgsql-tmp
             - mountPath: /dev/shm
               name: shm
           {{- if .Values.dandelion.multiNode }}
