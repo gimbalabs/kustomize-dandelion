@@ -35,9 +35,9 @@ spec:
             - name: shm
               emptyDir: {}
           extraVolumeMounts:
-            - mountPah: /bitnami/postgresql/data/base/pgsql_tmp
+            - mountPath: /bitnami/postgresql/data/base/pgsql_tmp
               name: pgsql_tmp
-            - mountPah: /dev/shm
+            - mountPath: /dev/shm
               name: shm
           {{- if .Values.dandelion.multiNode }}
           affinity:
