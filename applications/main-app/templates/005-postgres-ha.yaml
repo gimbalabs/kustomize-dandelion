@@ -50,6 +50,16 @@ spec:
             passwords: {{ .Values.dandelion.db.roPassword | default "CHANGEME" }}
         metrics:
           enabled: true
+        extraVolumes:
+          - name: pgsql_tmp
+            emptyDir: {}
+          - name: shm
+            emptyDir: {}
+        extraVolumeMounts:
+          - mountPah: /bitnami/postgresql/data/base/pgsql_tmp
+            name: pgsql_tmp
+          - mountPah: /dev/shm
+            name: shm
         persistence:
           size: {{ .Values.dandelion.db.diskSize | default "10Gi" }}
 
