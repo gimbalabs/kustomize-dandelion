@@ -10,7 +10,7 @@ data:
       "Providers": [
           { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-de",     "addr": "contabo-1.de.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",     "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "RSV",          "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "RSV-2",        "addr": "dandelion2.reservoir.network", "port": 5001, "protocol": "https" },
@@ -25,8 +25,8 @@ data:
     {
       "Providers": [
           { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-es", "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-de",     "addr": "contabo-1.de.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",     "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "RSV",          "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
           { "name": "RSV-2",        "addr": "dandelion2.reservoir.network", "port": 443, "protocol": "https" },
@@ -72,6 +72,7 @@ data:
   drift-hc.sh: |
     #!/usr/bin/env bash
 
+    HC_PID=$$
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed "s|^d.||g")
     HEALTHCHECK_TIMEOUT=5
     MAX_DRIFT=${CARDANO_MAX_TIP_DRIFT:-600}
@@ -82,56 +83,61 @@ data:
       TIP_DRIFT=$(( $(date -d "${currtip}" +%s) - $(date -d "${dbtip}" +%s) ))
       if [[ ${TIP_DRIFT} -lt ${MAX_DRIFT} ]]
       then
-        echo "OK (${HOST_HEADER}): Tip ok (last block timestamp: ${dbtip}, tip-drift: -${TIP_DRIFT}) (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+        echo "[OK][${HC_PID}] (${HOST_HEADER}): Tip ok (last block timestamp: ${dbtip}, tip-drift: -${TIP_DRIFT}) (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
         exit 0
       else
-        echo "ERROR (${HOST_HEADER}): Tip too far (last block timestamp: ${dbtip}, tip-drift: -${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
+        echo "[ERROR][${HC_PID}] (${HOST_HEADER}): Tip too far (last block timestamp: ${dbtip}, tip-drift: -${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
         exit 1
       fi
     else
-      echo "ERROR (${HOST_HEADER}): Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, could not query tip"
+      echo "[ERROR][${HC_PID}] (${HOST_HEADER}): Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, could not query tip"
       exit 2
     fi
   graphql-api-hc.sh: |
     #!/usr/bin/env bash
 
+    HC_PID=$$
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|graphql|postgrest|g') bash /configmap/drift-hc.sh
     if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number 2>/dev/null | grep -q ^[0-9] || ( echo "ERROR (${HOST_HEADER}): no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary '{"query":"# Write your query or mutation here\nquery chainTipAndCurrentEpochNumber {\n  cardano {\n    tip {\n      number\n    }\n    currentEpoch {\n      number\n    }\n  }\n}"}' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT} | jq -r .data.cardano.tip.number 2>/dev/null | grep -q ^[0-9] || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}): no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
   koios-api-hc.sh: |
     #!/usr/bin/env bash
 
+    HC_PID=$$
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|koios|postgrest|g') bash /configmap/drift-hc.sh
     if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "ERROR (${HOST_HEADER}): no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/rpc/tip" | grep -q hash || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}): no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
   postgrest-api-hc.sh: |
     #!/usr/bin/env bash
 
+    HC_PID=$$
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|postgrest|postgrest|g') bash /configmap/drift-hc.sh
     if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "ERROR (${HOST_HEADER}: no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}: no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
   rosetta-api-hc.sh: |
     #!/usr/bin/env bash
 
+    HC_PID=$$
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|rosetta|postgrest|g') bash /configmap/drift-hc.sh
     if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "ERROR (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
 
   submit-api-hc.sh: |
     #!/usr/bin/env bash
 
+    HC_PID=$$
     HEALTHCHECK_TIMEOUT=5
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
     HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|submit|ogmios|g') bash /configmap/ogmios-hc.sh
@@ -145,18 +151,25 @@ data:
 
   ogmios-hc.sh: |
     #!/usr/bin/env bash
-
+    
+    HC_PID=$$
     HEALTHCHECK_TIMEOUT=5
     MAX_DRIFT=${CARDANO_MAX_TIP_DRIFT:-600}
     MIN_NETWORK_SYNC="0.99995"
 
     export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
 
-    networkSynchronization=$(timeout ${HEALTHCHECK_TIMEOUT} curl -ks -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/health | jq -r .networkSynchronization)
+    networkSynchronization=$(timeout ${HEALTHCHECK_TIMEOUT} curl -ks -H "Host: ${HOST_HEADER}" -H 'Accept: application/json' https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/health | jq -r .networkSynchronization 2>/dev/null)
 
-    if [ 1 -eq "$(echo "${networkSynchronization} < ${MIN_NETWORK_SYNC}" | bc)" ]
+    if [ -z ${networkSynchronization} ]
     then
-      echo "ERROR ($HOST_HEADER): Network Synchronization is ${networkSynchronization}, less than the required ${MIN_NETWORK_SYNC} (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+      echo "[ERROR][${HC_PID}] ($HOST_HEADER): Could not get 'networkSynchronization' (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+      exit 1
+    fi
+
+    if [ 1 -eq "$(echo "${networkSynchronization} < ${MIN_NETWORK_SYNC}" | bc 2>/dev/null)" ]
+    then
+      echo "[ERROR][${HC_PID}] ($HOST_HEADER): Network Synchronization is ${networkSynchronization}, less than the required ${MIN_NETWORK_SYNC} (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
       exit 1
     fi
 
@@ -167,14 +180,14 @@ data:
       TIP_DRIFT=$(( $(date -d "${currtip}" +%s) - $(date -d "${ogmiosLastTipUpdate}" +%s) ))
       if [[ ${TIP_DRIFT} -lt ${MAX_DRIFT} ]]
       then
-        echo "OK (${HOST_HEADER}}: Tip ok (last block timestamp: ${ogmiosLastTipUpdate}, tip-drift: -${TIP_DRIFT}) (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
+        echo "[OK][${HC_PID}] (${HOST_HEADER}}: Tip ok (last block timestamp: ${ogmiosLastTipUpdate}, tip-drift: -${TIP_DRIFT}) (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT})"
         exit 0
       else
-        echo "ERROR (${HOST_HEADER}): Tip too far (last block timestamp: ${ogmiosLastTipUpdate}, tip-drift: -${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
+        echo "[ERROR][${HC_PID}] (${HOST_HEADER}): Tip too far (last block timestamp: ${ogmiosLastTipUpdate}, tip-drift: -${TIP_DRIFT}), eliminating from availability (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})"
         exit 1
       fi
     else
-      echo "ERROR (${HOST_HEADER}): Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, could not query tip"
+      echo "[ERROR][${HC_PID}] (${HOST_HEADER}): Failed polling for ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, could not query tip"
       exit 2
     fi
 
@@ -209,7 +222,17 @@ data:
     
         acl valid_hosts hdr(host) -m reg -i (${SUB_DOMAIN}.|)($(echo $APIS | sed 's/ /|/g')).($(echo $NETWORKS | sed 's/ /|/g')).${TOP_DOMAIN}$
         acl valid_hosts hdr(host) -m reg -i stats-ian.dandelion.link
+
+        acl denied path_beg,url_dec -i /graphql
+        #acl denied req.body -m reg .*BlockOverView.*
+
         http-request deny if !valid_hosts
+        http-request deny if denied
+
+        option http-buffer-request
+        declare capture request len 5000000
+        http-request capture req.body id 0
+        log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hs %{+Q}r %[capture.req.hdr(0)]"
     
         use_backend %[req.hdr(Host),lower]
         default_backend no-match

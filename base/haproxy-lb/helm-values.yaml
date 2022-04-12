@@ -140,6 +140,7 @@ extraVolumes:
     #log stdout format raw local0
 config: |
   global
+    log stdout format raw local0
     nbthread 4
     maxconn 1000
     insecure-fork-wanted
@@ -148,6 +149,8 @@ config: |
 
   defaults
     log global
+    option httplog
+    option dontlognull
     timeout client 20s
     timeout connect 20s
     timeout server 20s
