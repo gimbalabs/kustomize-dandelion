@@ -31,5 +31,6 @@ patches:
 resources:
 - resources/ns.yaml
 - resources/configmap.yaml
+- resources/service-metrics.yaml
 
 namespace: haproxy

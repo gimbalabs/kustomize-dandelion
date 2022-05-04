@@ -211,6 +211,17 @@ data:
     
     # FRONTEND conf
     cat > ${CONFIG_OUTPUT_DIR}/dandelion-haproxy.cfg <<EOF
+      frontend metrics
+        mode http
+        bind :1024
+        stats enable
+        stats uri /
+        stats hide-version
+        stats refresh 10s
+        stats admin if LOCALHOST
+        option http-use-htx
+        http-request use-service prometheus-exporter if { path /metrics }
+
       frontend main
         mode http
         bind :80
@@ -229,10 +240,18 @@ data:
         http-request deny if !valid_hosts
         http-request deny if denied
 
+        acl cf_ip_hdr  req.hdr(CF-Connecting-IP) -m found
+        http-request set-header X-Forwarded-For %[req.hdr(CF-Connecting-IP)] if cf_ip_hdr
+
         option http-buffer-request
+
+        declare capture request len 256
+        http-request capture req.hdr(X-Forwarded-For) id 0
+
         declare capture request len 5000000
-        http-request capture req.body id 0
-        log-format "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hs %{+Q}r %[capture.req.hdr(0)]"
+        http-request capture req.body id 1
+
+        log-format "%ci:%cp (X-Forwarded-For: %[capture.req.hdr(0)]) [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq %hs %{+Q}r %[capture.req.hdr(1)]"
     
         use_backend %[req.hdr(Host),lower]
         default_backend no-match
