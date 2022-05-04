@@ -106,6 +106,12 @@ spec:
         - name: postgres-password
           mountPath: /run/secrets/postgres-password
           readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 3
       restartPolicy: Always
       serviceAccountName: ""
       volumes:
