@@ -26,6 +26,23 @@ spec:
         volumeMounts:
         - mountPath: /data/db
           name: node-db
+      - name: restore-from-csnapshotio
+        image: repsistance/cardano-node:iohk-mn-passive-1.33.0-0
+        imagePullPolicy: IfNotPresent
+        command: ["bash", "-x", "/configmap/initContainer-entrypoint"]
+        env:
+        - name: RESTORE_SNAPSHOT
+          value: "true"
+        - name: NETWORK
+          value: mainnet
+        - name: CNODE_DB_PATH
+          value: /data/db
+        resources: {}
+        volumeMounts:
+        - name: cardano-node-configmap
+          mountPath: /configmap
+        - mountPath: /data/db
+          name: node-db
       containers:
       - name: cardano-node
         command: ["bash", "-c", "export HOME=/nonexistent; source $HOME/.baids/baids && set -x; ${NETWORK}-cnode-run-as-${CNODE_ROLE} +RTS -N2 --disable-delayed-os-memory-return -T -I0 -A16m"]

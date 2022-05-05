@@ -15,6 +15,10 @@ patches:
   target:
     kind: StatefulSet
     name: cardano-node
+- path: patches/cardano-node-deployment-initContainers-env.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
 - path: patches/cardano-node-deployment-image.yaml
   target:
     kind: StatefulSet
