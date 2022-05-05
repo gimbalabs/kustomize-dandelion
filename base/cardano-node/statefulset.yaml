@@ -36,7 +36,7 @@ spec:
         - name: NETWORK
           value: mainnet
         - name: CNODE_DB_PATH
-          value: /data/db
+          value: /data
         resources: {}
         volumeMounts:
         - name: cardano-node-configmap
