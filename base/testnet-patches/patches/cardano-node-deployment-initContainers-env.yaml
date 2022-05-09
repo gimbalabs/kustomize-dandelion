@@ -6,4 +6,4 @@
     - name: NETWORK
       value: testnet
     - name: CNODE_DB_PATH
-      value: /data/db
+      value: /data
