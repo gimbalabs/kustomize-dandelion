@@ -26,6 +26,8 @@ spec:
         image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
         imagePullPolicy: IfNotPresent
         env:
+        - name: NETWORK
+          value: mainnet
         - name: CARDANO_NODE_SOCKET_TCP_HOST
           value: "cardano-node-headless"
         - name: CARDANO_NODE_SOCKET_TCP_PORT

@@ -99,30 +99,10 @@ data:
 
     trap finish-socat EXIT
 
-    echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
-    while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
-    do
-      sleep 1
-      echo -n .
-    done
-
-    rm -f ${CARDANO_NODE_SOCKET_PATH}
-    socat UNIX-LISTEN:${CARDANO_NODE_SOCKET_PATH},fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
-    while ! `timeout 10 cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
-    do
-      sleep 1
-      echo -n .
-    done
-
-    cardano-cli query tip --mainnet
-    if [ $? -eq 0 ]
-    then
-      MAGIC_ARG="--mainnet"
-      S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI}
-    else
-      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
-      S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI}
-    fi
+    case "${NETWORK}" in
+      "mainnet") S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI};;
+      "testnet") S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI};;
+    esac
 
     if [ "${RESTORE_SNAPSHOT}" == "true" ]
     then
@@ -156,6 +136,30 @@ data:
     fi
     DB_BLOCK_NO=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select block_no from block order by id desc limit 1;' ${POSTGRES_DB})
     test -z "${DB_BLOCK_NO}" && DB_BLOCK_NO=0
+
+    echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
+    while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    rm -f ${CARDANO_NODE_SOCKET_PATH}
+    socat UNIX-LISTEN:${CARDANO_NODE_SOCKET_PATH},fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
+    while ! `timeout 10 cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    cardano-cli query tip --mainnet
+    if [ $? -eq 0 ]
+    then
+      MAGIC_ARG="--mainnet"
+    else
+      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
+    fi
+
     echo -n "[+] Waiting for cardano-node to reach tip..."
     while [[ -n $(cardano-cli query tip ${MAGIC_ARG} | jq -r .block) ]] && [ ${DB_BLOCK_NO} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq -r .block) ]
     do
