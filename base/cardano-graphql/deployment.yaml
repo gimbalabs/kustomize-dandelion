@@ -122,14 +122,19 @@ spec:
         ports:
         - containerPort: 3100
         livenessProbe:
-          tcpSocket:
-            port: 3100
+          failureThreshold: 3
+          successThreshold: 1
+          exec:
+            command: ["bash", "/configmap/liveness-healthcheck"]
           initialDelaySeconds: 1800
-          periodSeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 10
         resources: {}
         volumeMounts:
         - name: cardano-graphql-config
           mountPath: /opt/cardano/cnode/files
+        - name: cardano-graphql-configmap
+          mountPath: /configmap
         - name: common-env
           mountPath: /run/secrets/common-env
           readOnly: true

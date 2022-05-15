@@ -3,6 +3,13 @@ kind: ConfigMap
 metadata:
   name: cardano-graphql-configmap
 data:
+  liveness-healthcheck: |
+    HEALTHCHECK_TIMEOUT=5
+    timeout ${HEALTHCHECK_TIMEOUT} curl -w %{http_code} -k http://localhost:3100 -H 'Accept-Encoding: gzip, deflate, br' -H 'Content-Type: application/json' -H 'Accept: application/json' -H 'Connection: keep-alive' -H 'DNT: 1' --data-binary '{"query":"fragment _Sync on Query {\n  cardanoDbMeta {\n    initialized\n    syncPercentage\n    __typename\n  }\n  __typename\n}\n\nfragment _GetTip on Query {\n  cardano {\n    tip {\n      number\n      slotNo\n      slotInEpoch\n      epochNo\n      forgedAt\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nquery PaymentAddresses {\n  ..._Sync\n  ..._GetTip\n}\n"}' | grep -iq initialized.*true
+    if [ $? -ne 0 ]
+    then
+      exit 1
+    fi
   initContainer-entrypoint: |
     rm -rf /config/lost+found
 
