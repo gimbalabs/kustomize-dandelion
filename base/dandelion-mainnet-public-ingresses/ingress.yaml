@@ -2,6 +2,29 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: public-cardano-cardano-token-registry-api
+spec:
+  rules:
+    - host: cardano-token-registry-api.mainnet.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-token-registry
+                port:
+                  number: 3042
+            path: /
+            pathType: Prefix
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - cardano-token-registry-api.mainnet.dandelion.link
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
   name: public-cardano-explorer-api
 spec:
   rules:
