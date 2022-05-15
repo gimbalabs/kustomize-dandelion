@@ -8,7 +8,7 @@ data:
   topology-mainnet.json: |  
     {
       "Providers": [
-          { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-uk",     "addr": "dedi0.uk.br.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-fr",     "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
@@ -24,7 +24,7 @@ data:
   topology-testnet.json: |
     {
       "Providers": [
-          { "name": "PEACE-us",     "addr": "contabo.us.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-uk",     "addr": "dedi0.uk.br.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "PEACE-fr",     "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
@@ -69,6 +69,10 @@ data:
     option external-check
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
     external-check command /configmap/rosetta-api-hc.sh
+  cardano-token-registry-api-healthcheck.tpl: |
+    option httpchk
+    http-check send meth GET uri / ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
+    http-check expect rstring JSON.Server
   drift-hc.sh: |
     #!/usr/bin/env bash
 
@@ -234,8 +238,11 @@ data:
         acl valid_hosts hdr(host) -m reg -i (${SUB_DOMAIN}.|)($(echo $APIS | sed 's/ /|/g')).($(echo $NETWORKS | sed 's/ /|/g')).${TOP_DOMAIN}$
         acl valid_hosts hdr(host) -m reg -i stats-ian.dandelion.link
 
-        acl denied path_beg,url_dec -i /graphql
+        # deny examples:
+        #acl denied path_beg,url_dec -i /graphql
         #acl denied req.body -m reg .*BlockOverView.*
+        #acl denied req.body -m reg .*activeStake_aggregate.*epochNo.*326.*
+        #acl denied hdr(X-Forwarded-For) -m reg -i 52.202.136.115
 
         http-request deny if !valid_hosts
         http-request deny if denied
