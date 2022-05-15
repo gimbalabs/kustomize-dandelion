@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: cardano-token-registry
+  name: cardano-token-registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: cardano-token-registry
+  template:
+    metadata:
+      labels:
+        io.kompose.service: cardano-token-registry
+    spec:
+      initContainers:
+      - name: git-init
+        image: alpine/git
+        env:
+        - name: TOKEN_REGISTRY_GIT_REPO
+          value: "https://github.com/cardano-foundation/cardano-token-registry"
+        - name: TOKEN_REGISTRY_GIT_BRANCH
+          value: "master"
+        - name: TOKEN_REGISTRY_DEST
+          value: "/app/repo/cardano-token-registry"
+        command: ["sh", "-c", "if [ ! -e ${TOKEN_REGISTRY_DEST}/.git ]; then git clone ${TOKEN_REGISTRY_GIT_REPO} ${TOKEN_REGISTRY_DEST}; fi; cd ${TOKEN_REGISTRY_DEST} && git reset && git checkout ${TOKEN_REGISTRY_GIT_BRANCH} && git pull"]
+        volumeMounts:
+        - mountPath: /app/repo
+          name: token-registry-repo
+      containers:
+      - name: dbless-ctr
+        image: gimbalabs/dbless-cardano-token-registry:0.0.2
+        imagePullPolicy: Always
+        env:
+        - name: TOKEN_REGISTRY_MAPPINGS_DIR
+          value: "/app/repo/cardano-token-registry/mappings"
+        ports:
+        - containerPort: 3042
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /app/repo
+          name: token-registry-repo
+      - name: git-puller
+        image: alpine/git
+        env:
+        - name: TOKEN_REGISTRY_GIT_REPO
+          value: "https://github.com/cardano-foundation/cardano-token-registry"
+        - name: TOKEN_REGISTRY_GIT_BRANCH
+          value: "master"
+        - name: TOKEN_REGISTRY_DEST
+          value: "/app/repo/cardano-token-registry"
+        - name: SYNC_INTERVAL # seconds
+          value: "3600"
+        command: ["sh", "-c", "while true; do if [ ! -e ${TOKEN_REGISTRY_DEST}/.git ]; then git clone ${TOKEN_REGISTRY_GIT_REPO} ${TOKEN_REGISTRY_DEST}; fi; cd ${TOKEN_REGISTRY_DEST} && git reset && git checkout ${TOKEN_REGISTRY_GIT_BRANCH} && git pull; sleep ${SYNC_INTERVAL}; done"]
+        volumeMounts:
+        - mountPath: /app/repo
+          name: token-registry-repo
+      volumes:
+      - name: token-registry-repo
+        persistentVolumeClaim:
+          claimName: cardano-token-registry-git
+
