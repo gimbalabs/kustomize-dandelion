@@ -4,6 +4,7 @@ metadata:
   name: koios-configmap
 data:
   initContainer-entrypoint: |
+    export PGCONNECT_TIMEOUT=10
     while [ -z "$(psql -tA -P pager=off -c 'SELECT schema_name FROM information_schema.schemata' | grep ^${PGRST_DB_SCHEMA}$)" ]
     do
       sleep 1
@@ -98,6 +99,7 @@ data:
       export DB_SCRIPTS_URL="${URL_RAW}/scripts/grest-helper-scripts/db-scripts"
 
       export CURL_TIMEOUT=20
+      export PGCONNECT_TIMEOUT=10
     }
 
     init

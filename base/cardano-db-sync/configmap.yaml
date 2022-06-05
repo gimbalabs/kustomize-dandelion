@@ -4,6 +4,7 @@ metadata:
   name: cardano-db-sync-configmap
 data:
   create-db-ro-user-entrypoint: |
+    export PGCONNECT_TIMEOUT=10
     while [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
     do
       sleep 1
@@ -98,6 +99,8 @@ data:
     }
 
     trap finish-socat EXIT
+
+    export PGCONNECT_TIMEOUT=10
 
     case "${NETWORK}" in
       "mainnet") S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI};;

@@ -27,6 +27,8 @@ data:
 
     trap finish-socat EXIT
 
+    export PGCONNECT_TIMEOUT=10
+
     echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
     while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
     do

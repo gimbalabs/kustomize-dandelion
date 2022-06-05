@@ -126,7 +126,7 @@ spec:
           successThreshold: 1
           exec:
             command: ["bash", "/configmap/liveness-healthcheck"]
-          initialDelaySeconds: 1800
+          initialDelaySeconds: 3600
           periodSeconds: 20
           timeoutSeconds: 10
         resources: {}

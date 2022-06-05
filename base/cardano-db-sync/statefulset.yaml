@@ -164,6 +164,8 @@ spec:
       volumes:
       - name: node-ipc
         emptyDir: {}
+      - name: aux-data-dir
+        
       - name: common-env
         configMap:
           name: common-env
