@@ -17,7 +17,7 @@ spec:
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.33.0-0
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.0-0
         imagePullPolicy: IfNotPresent
         env:
         - name: OGMIOS_NETWORK
@@ -43,7 +43,7 @@ spec:
         - name: LOG_LEVEL
           value: "Debug"
         command: ["sh", "-xc", "ogmios --node-socket ${NODE_SOCKET_PATH} --host ${LISTEN_HOST} --port ${LISTEN_PORT} --log-level ${LOG_LEVEL} --node-config ${NODE_CONFIG_PATH}"]
-        image: cardanosolutions/ogmios:v5.1.0-mainnet
+        image: cardanosolutions/ogmios:v5.5.0-mainnet
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 1337
