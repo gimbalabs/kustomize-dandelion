@@ -23,7 +23,7 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0
-        image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
+        image: gimbalabs/cardano-db-sync-init-container:1.35.0-0
         imagePullPolicy: IfNotPresent
         env:
         - name: NETWORK
@@ -39,9 +39,9 @@ spec:
         - name: RESTORE_SNAPSHOT
           value: "true"
         - name: DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI
-          value: "s3://updates-cardano-testnet/cardano-db-sync/12/"
+          value: "s3://updates-cardano-testnet/cardano-db-sync/13/"
         - name: DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI
-          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/12/"
+          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/13/"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -118,7 +118,7 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
-        image: gimbalabs/cardano-db-sync:11.0.4
+        image: gimbalabs/cardano-db-sync:13.0.0
         workingDir: /var/lib/cdbsync
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent

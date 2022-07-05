@@ -19,7 +19,7 @@ spec:
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.33.0-0
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.0-0
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: cardano-graphql-config
@@ -28,7 +28,7 @@ spec:
           mountPath: /configmap
       - name: wait-for-tip
         command: ["bash", "-x", "/configmap/initContainer-wait-for-tip"]
-        image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
+        image: gimbalabs/cardano-db-sync-init-container:1.35.0-0
         imagePullPolicy: IfNotPresent
         env:
         - name: CARDANO_NODE_SOCKET_TCP_HOST
@@ -115,7 +115,7 @@ spec:
           value: /run/secrets/postgres-password/POSTGRES_PASSWORD
         - name: CARDANO_NODE_SOCKET_PATH
           value: /ipc/node.socket
-        image: inputoutput/cardano-graphql:6.2.0-mainnet
+        image: inputoutput/cardano-graphql:master-mainnet
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
         name: cardano-graphql

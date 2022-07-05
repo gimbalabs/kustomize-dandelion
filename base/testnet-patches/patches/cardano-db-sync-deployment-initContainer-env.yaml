@@ -14,7 +14,7 @@
     - name: RESTORE_SNAPSHOT
       value: "true"
     - name: DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI
-      value: "s3://updates-cardano-testnet/cardano-db-sync/12/"
+      value: "s3://updates-cardano-testnet/cardano-db-sync/13/"
     - name: DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI
       value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/12/"
     - name: POSTGRES_HOST
