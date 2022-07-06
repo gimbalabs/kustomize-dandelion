@@ -21,7 +21,7 @@ data:
     ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
   extra.sql: |
-    CREATE OR REPLACE FUNCTION get_tx_history_for_addresses(data json) RETURNS TABLE (tx_hash text, block uinteger, tx_timestamp timestamp) AS $$
+    CREATE OR REPLACE FUNCTION get_tx_history_for_addresses(data json) RETURNS TABLE (tx_hash text, block word31type, tx_timestamp timestamp) AS $$
     DECLARE
       addresses text[];
     BEGIN
@@ -62,7 +62,7 @@ data:
         GROUP BY utxo_view.address);
     END; $$ LANGUAGE PLPGSQL IMMUTABLE;
 
-    CREATE FUNCTION get_metadata(metadatum word64type default 0, epochs int[] default null) RETURNS TABLE (epoch uinteger, data jsonb) AS $$
+    CREATE FUNCTION get_metadata(metadatum word64type default 0, epochs int[] default null) RETURNS TABLE (epoch word31type, data jsonb) AS $$
     BEGIN
       IF epochs IS NOT NULL THEN
         RETURN QUERY (select block.epoch_no, json as epoch from tx_metadata
