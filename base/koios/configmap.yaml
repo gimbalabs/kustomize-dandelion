@@ -128,8 +128,11 @@ data:
       sleep 20
     done
 
+    export FORCE_OVERWRITE='Y'
+    export RESET_GREST='Y'
     setup_db_basics
     deploy_query_updates
+    update_grest_version
 
     POSTGREST_POD=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r .items[].metadata.name | grep ^koios-api)
     curl -m 30 -sSk -X DELETE -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods/${POSTGREST_POD}"
