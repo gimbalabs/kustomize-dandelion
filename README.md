@@ -190,6 +190,34 @@ k3d cluster delete  ${CLUSTER_NAME}
 ```
 * Just [deploy again :)](#deploy-k8s-manifests)
 
+## Resync db only
+
+```
+NAMESPACE=dandelion-testnet
+
+kubectl scale statefulset -n ${NAMESPACE} \
+  --replicas=0 \
+  cardano-db-sync init0-postgresql-ha-postgresql
+
+kubectl delete pvc -n ${NAMESPACE} \
+  dbsync-statedir-cardano-db-sync-0 \
+  data-init0-postgresql-ha-postgresql-0
+
+kubectl delete job --all -n ${NAMESPACE}
+
+kubectl scale statefulset -n ${NAMESPACE} \
+  --replicas=1 \
+  cardano-db-sync init0-postgresql-ha-postgresql
+
+for jobfile in base/cardano-db-sync/job-ro-user-create.yaml base/koios/job-deploy-koios-sql.yaml
+do
+  kubectl apply -n ${NAMESPACE} -f ${jobfile}
+done
+
+kubectl rollout restart deploy -n ${NAMESPACE} postgrest koios-api 
+```
+ 
+
 [docker]: https://docs.docker.com/engine/install/
 [kustomize]: https://kustomize.io
 [kubectl]: https://kubernetes.io/docs/tasks/tools/#kubectl
