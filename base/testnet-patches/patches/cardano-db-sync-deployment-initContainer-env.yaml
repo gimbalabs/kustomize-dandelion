@@ -12,7 +12,7 @@
     - name: CARDANO_NODE_SOCKET_PATH
       value: /ipc/node.socket
     - name: RESTORE_SNAPSHOT
-      value: "false"
+      value: "true"
     - name: DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI
       value: "s3://updates-cardano-testnet/cardano-db-sync/13/"
     - name: DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI
