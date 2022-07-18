@@ -136,7 +136,7 @@ spec:
           mountPath: /run/secrets/postgres-password
           readOnly: true
         - name: dbsync-statedir
-          mountPath: /var/lib/cdbsync
+          mountPath: /var/lib/cexplorer
         - name: cardano-db-sync-configmap
           mountPath: /configmap
         livenessProbe:
