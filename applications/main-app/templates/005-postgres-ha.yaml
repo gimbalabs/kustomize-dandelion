@@ -28,9 +28,6 @@ spec:
           repmgrUsername: repmgruser
           repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
           repmgrDatabase: repmgrdatabase
-          containerSecurityContext:
-            enabled: true
-            runAsUser: 1001
           {{- if .Values.dandelion.multiNode }}
           affinity:
             nodeAffinity:
@@ -51,6 +48,8 @@ spec:
             usernames: 'dandelion_ro'
             passwords: {{ .Values.dandelion.db.roPassword | default "CHANGEME" }}
         metrics:
+          enabled: true
+        volumePermissions:
           enabled: true
         persistence:
           size: {{ .Values.dandelion.db.diskSize | default "10Gi" }}
