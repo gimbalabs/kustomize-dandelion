@@ -30,7 +30,7 @@ spec:
           repmgrDatabase: repmgrdatabase
           containerSecurityContext:
             enabled: true
-            runAsUser: 1001
+            runAsUser: 0
           {{- if .Values.dandelion.multiNode }}
           affinity:
             nodeAffinity:
