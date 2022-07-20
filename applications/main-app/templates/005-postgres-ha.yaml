@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://charts.bitnami.com/bitnami
     chart: postgresql-ha
-    targetRevision: 8.1.5
+    targetRevision: 8.1.2
     helm:
       releaseName: init0
       parameters:
@@ -22,19 +22,12 @@ spec:
       values: |
         postgresql:
           replicaCount: 1
-          updateStrategyType: OnDelete
           password: {{ .Values.dandelion.db.adminPassword | default "cdbsCHANGEME" }}
           database: cexplorer
           usePasswordFile: false
           repmgrUsername: repmgruser
           repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
           repmgrDatabase: repmgrdatabase
-          extraVolumes:
-            - name: pgsql-tmp
-              emptyDir: {}
-          extraVolumeMounts:
-            - mountPath: /bitnami/postgresql/data/base/pgsql_tmp
-              name: pgsql-tmp
           {{- if .Values.dandelion.multiNode }}
           affinity:
             nodeAffinity:
