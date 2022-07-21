@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://charts.bitnami.com/bitnami
     chart: postgresql-ha
-    targetRevision: 9.2.3
+    targetRevision: 8.1.5
     helm:
       releaseName: init0
       parameters:
