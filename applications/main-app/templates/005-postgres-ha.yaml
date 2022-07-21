@@ -29,12 +29,6 @@ spec:
           repmgrUsername: repmgruser
           repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
           repmgrDatabase: repmgrdatabase
-          extraVolumes:
-            - name: pgsql-tmp
-              emptyDir: {}
-          extraVolumeMounts:
-            - mountPath: /bitnami/postgresql/data/base/pgsql_tmp
-              name: pgsql-tmp
           {{- if .Values.dandelion.multiNode }}
           affinity:
             nodeAffinity:
