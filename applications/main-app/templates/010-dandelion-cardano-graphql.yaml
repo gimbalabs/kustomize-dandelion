@@ -43,11 +43,6 @@ spec:
     repoURL: {{ .Values.git.repositoryUrl }}
     targetRevision: {{ .Values.git.targetRevision }}
     path: base/cardano-hasura
-    plugin:
-      name: kustomized-kustomize-network
-      env:
-        - name: CARDANO_NETWORK
-          value: {{ .Values.dandelion.cardano.network }}
 
   destination:
     namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
