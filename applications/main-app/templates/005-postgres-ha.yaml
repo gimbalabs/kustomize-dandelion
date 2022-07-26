@@ -50,6 +50,8 @@ spec:
             passwords: {{ .Values.dandelion.db.roPassword | default "CHANGEME" }}
         metrics:
           enabled: true
+        volumePermissions:
+          enabled: true
         persistence:
           size: {{ .Values.dandelion.db.diskSize | default "10Gi" }}
 
