@@ -1,4 +1,4 @@
 - op: replace
   path: /spec/template/spec/containers/0/image
   value:
-    repsistance/cardano-node:iohk-tn-passive-1.35.1-0
+    repsistance/cardano-node:iohk-tn-passive-1.35.2-0
