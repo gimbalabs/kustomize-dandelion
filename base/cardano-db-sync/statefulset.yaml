@@ -119,7 +119,7 @@ spec:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
         image: gimbalabs/cardano-db-sync:13.0.2
-        workingDir: /var/lib/cdbsync
+        workingDir: /var/lib/cexplorer
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
         resources: {}
