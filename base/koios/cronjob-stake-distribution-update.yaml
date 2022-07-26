@@ -14,7 +14,7 @@ spec:
           containers:
           - name: koios-stake-distribution-update
             command: ["bash", "-x", "/configmap/stake-distribution-update"]
-            image: gimbalabs/cardano-db-sync-init-container:1.35.0-0
+            image: gimbalabs/cardano-db-sync-init-container:1.35.2-0
             volumeMounts:
             - name: koios-configmap
               mountPath: /configmap
