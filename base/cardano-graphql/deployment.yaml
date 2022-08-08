@@ -117,7 +117,7 @@ spec:
           value: /ipc/node.socket
         image: inputoutput/cardano-graphql:master-mainnet
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         name: cardano-graphql
         ports:
         - containerPort: 3100
