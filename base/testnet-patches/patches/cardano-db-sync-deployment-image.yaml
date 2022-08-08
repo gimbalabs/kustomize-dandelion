@@ -1,4 +1,4 @@
 - op: replace
   path: /spec/template/spec/containers/0/image
   value:
-    gimbalabs/cardano-db-sync:13.0.2
+    gimbalabs/cardano-db-sync:13.0.4-rc1
