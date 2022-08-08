@@ -1,4 +1,4 @@
 - op: replace
   path: /spec/template/spec/containers/0/image
   value:
-    cardanosolutions/ogmios:v5.5.0-testnet
+    cardanosolutions/ogmios:v5.5.3-testnet
