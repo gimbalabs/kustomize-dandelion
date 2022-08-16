@@ -10,7 +10,7 @@ spec:
       containers:
       - name: deploy-koios-sql
         command: ["bash", "-x", "/configmap/koios-deploy-sql-entrypoint"]
-        image: gimbalabs/cardano-db-sync-init-container:1.35.2-0
+        image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
         volumeMounts:
         - name: koios-configmap
           mountPath: /configmap

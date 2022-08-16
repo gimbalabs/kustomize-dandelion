@@ -20,7 +20,7 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0
-        image: gimbalabs/cardano-db-sync-init-container:1.35.2-0
+        image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
         imagePullPolicy: IfNotPresent
         env:
         - name: PGRST_DB_SCHEMA
