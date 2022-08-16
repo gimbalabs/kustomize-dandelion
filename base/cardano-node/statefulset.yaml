@@ -27,7 +27,7 @@ spec:
         - mountPath: /data/db
           name: node-db
       - name: restore-from-csnapshotio
-        image: repsistance/cardano-node:iohk-mn-passive-1.35.3-rc1-0
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.3-0
         imagePullPolicy: IfNotPresent
         command: ["bash", "-x", "/configmap/initContainer-entrypoint"]
         env:
@@ -59,7 +59,7 @@ spec:
           value: /configmap/topology.json
         - name: CNODE_CONFIG_FILE
           value: /configmap/config.json
-        image: repsistance/cardano-node:iohk-mn-passive-1.35.3-rc1-0
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.3-0
         imagePullPolicy: IfNotPresent
         resources: {}
         terminationMessagePath: /dev/termination-log
