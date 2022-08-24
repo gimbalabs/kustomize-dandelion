@@ -24,4 +24,4 @@ resources:
 - resources/ingress.yaml
 
 components:
-- ../../base/testnet-patches
+- ../../base/network-specific-patches/iohk-testnet

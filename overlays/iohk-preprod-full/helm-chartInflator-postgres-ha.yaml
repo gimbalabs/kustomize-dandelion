@@ -1,0 +1,9 @@
+apiVersion: builtin
+kind: HelmChartInflationGenerator
+metadata:
+  name: postgresql-ha
+chartHome: ../../base/helm-charts
+Name: postgresql-ha
+releaseName: init0
+releaseNamespace: dandelion-tn-v9
+ValuesFile: ./helm-postgres-ha-values.yaml

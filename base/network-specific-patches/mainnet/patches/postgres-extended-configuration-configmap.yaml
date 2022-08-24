@@ -1,0 +1,20 @@
+- op: replace
+  path: /data
+  value:
+    override.conf: |
+      max_locks_per_transaction = 256
+      shared_buffers = 12GB
+      effective_cache_size = 36GB
+      maintenance_work_mem = 2GB
+      checkpoint_completion_target = 0.9
+      checkpoint_timeout = 1h
+      synchronous_commit = off
+      wal_buffers = 16MB
+      default_statistics_target = 500
+      random_page_cost = 1.1
+      effective_io_concurrency = 500
+      work_mem = 1024GB
+      min_wal_size = 1GB
+      max_wal_size = 2GB
+      max_parallel_workers_per_gather = 4
+      max_parallel_maintenance_workers = 4

@@ -1,0 +1,3460 @@
+apiVersion: v1
+automountServiceAccountToken: true
+kind: ServiceAccount
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: koios-deploy-sql
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: koios-deploy-sql
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - delete
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: pod-reader
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - pods/log
+  verbs:
+  - get
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: koios-deploy-sql
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: koios-deploy-sql
+subjects:
+- kind: ServiceAccount
+  name: koios-deploy-sql
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: pod-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pod-reader
+subjects:
+- kind: ServiceAccount
+  name: default
+---
+apiVersion: v1
+data:
+  create-db-ro-user-entrypoint: |
+    while [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
+    do
+      sleep 1
+    done
+    envsubst < /configmap/create-ro-user.sql.tpl > /tmp/create-ro-user.sql
+    psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /tmp/create-ro-user.sql ${POSTGRES_DB}
+    psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f /configmap/extra.sql ${POSTGRES_DB}
+  create-ro-user.sql.tpl: |
+    CREATE ROLE ${POSTGRES_USER_RO};
+    GRANT CONNECT ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER_RO};
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO ${POSTGRES_USER_RO};
+    GRANT USAGE ON SCHEMA public TO ${POSTGRES_USER_RO};
+    ALTER ROLE ${POSTGRES_USER_RO} WITH login;
+    ALTER USER ${POSTGRES_USER_RO} WITH PASSWORD '${POSTGRES_PASSWORD_RO}';
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA PUBLIC TO ${POSTGRES_USER_RO};
+  extra.sql: |
+    CREATE OR REPLACE FUNCTION get_tx_history_for_addresses(data json) RETURNS TABLE (tx_hash text, block uinteger, tx_timestamp timestamp) AS $$
+    DECLARE
+      addresses text[];
+    BEGIN
+      addresses := (SELECT array_agg(replace(rec::text, '"', ''))
+                    FROM json_array_elements(data->'addresses') rec);
+      RETURN QUERY (SELECT trim(txs.hash, '\\\\x') , txs.block_no, txs.time from (
+        SELECT
+          tx.id, tx.hash::text, block.block_no, block.hash::text as blockHash, block.time, tx.block_index
+          FROM block
+          INNER JOIN tx ON block.id = tx.block_id
+          INNER JOIN tx_out ON tx.id = tx_out.tx_id
+          WHERE tx_out.address = ANY(addresses)
+        UNION
+          SELECT DISTINCT
+            tx.id, tx.hash::text, block.block_no, block.hash::text as blockHash, block.time, tx.block_index
+            FROM block
+            INNER JOIN tx ON block.id = tx.block_id
+            INNER JOIN tx_in ON tx.id = tx_in.tx_in_id
+            INNER JOIN tx_out ON (tx_in.tx_out_id = tx_out.tx_id) AND (tx_in.tx_out_index = tx_out.index)
+            WHERE tx_out.address = ANY(addresses)
+            ORDER BY time DESC
+      ) AS txs);
+    END; $$ LANGUAGE PLPGSQL IMMUTABLE;
+
+    CREATE OR REPLACE FUNCTION get_eoe_balance_for_addresses(data json) RETURNS TABLE (balance numeric, address character varying) AS $$
+    DECLARE
+      addresses text[];
+      epoch int;
+    BEGIN
+      addresses := (SELECT array_agg(replace(rec::text, '"', ''))
+                    FROM json_array_elements(data->'addresses') rec);
+      SELECT json_extract_path_text(data, 'epoch') INTO epoch AS tmp;
+      RETURN QUERY (SELECT SUM(utxo_view.value), utxo_view.address FROM utxo_view
+        INNER JOIN tx ON tx.id = utxo_view.tx_id
+        INNER JOIN block ON block.id = tx.block_id
+        WHERE utxo_view.address = ANY(addresses)
+        AND block.slot_no <= (select get_last_slot_for_epoch(epoch))
+        GROUP BY utxo_view.address);
+    END; $$ LANGUAGE PLPGSQL IMMUTABLE;
+  initContainer-entrypoint: |
+    function finish-socat {
+      pkill -f socat && sleep 1
+      rm -f ${CARDANO_NODE_SOCKET_PATH}
+    }
+
+    trap finish-socat EXIT
+
+    echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
+    while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    rm -f ${CARDANO_NODE_SOCKET_PATH}
+    socat UNIX-LISTEN:${CARDANO_NODE_SOCKET_PATH},fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
+    while ! `timeout 10 cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    cardano-cli query tip --mainnet
+    if [ $? -eq 0 ]
+    then
+      MAGIC_ARG="--mainnet"
+      S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI}
+    else
+      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
+      S3_BUCKET_URI=${DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI}
+    fi
+
+    if [ "${RESTORE_SNAPSHOT}" == "true" ]
+    then
+      until psql -P pager=off -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB}
+      do
+        sleep 1
+      done
+      if [ -z "$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -c '\dt' ${POSTGRES_DB} | grep epoch)" ]
+      then
+        cd /aux-data-dir
+
+        read -d "\n" DB_SYNC_SNAPSHOT DB_SYNC_SNAPSHOT_SHA256_SUM <<<$(aws s3 ls --no-sign-request ${S3_BUCKET_URI} | awk '{print $NF}' | sort | tail -n2)
+
+        aws s3 cp --no-sign-request ${S3_BUCKET_URI}${DB_SYNC_SNAPSHOT} snapshot.tgz
+        aws s3 cp --no-sign-request ${S3_BUCKET_URI}${DB_SYNC_SNAPSHOT_SHA256_SUM} snapshot.tgz.sha256sum.tmp
+
+        echo $(awk '{print $1}' snapshot.tgz.sha256sum.tmp) snapshot.tgz > snapshot.tgz.sha256sum
+        sha256sum --check --status < snapshot.tgz.sha256sum
+        if [ $? -eq 0 ]
+        then
+          tar -zxf snapshot.tgz
+          psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f *sql ${POSTGRES_DB}
+          rm -f *sql
+          mv *state* /db-sync-statedir
+          chown -R root: /db-sync-statedir
+        else
+          echo "[!] sha256sum check error for ${S3_BUCKET_URI}${DB_SYNC_SNAPSHOT}"
+          exit 1
+        fi
+      fi
+    fi
+    DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
+    test -z "${DB_EPOCH}" && DB_EPOCH=0
+    echo -n "[+] Waiting for cardano-node to reach tip..."
+    while [[ -n $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]] && [ ${DB_EPOCH} -gt $(cardano-cli query tip ${MAGIC_ARG} | jq .epoch) ]
+    do
+      sleep 60
+      echo -n .
+    done
+  liveness-healthcheck: "KUBE_API_URL=https://kubernetes.default.svc/api/v1/namespaces\nKUBE_TOKEN=$(cat
+    /var/run/secrets/kubernetes.io/serviceaccount/token)\nNAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)\nSINCE_SECONDS=300\ncurl
+    -m 30 -sSk -H \"Authorization: Bearer $KUBE_TOKEN\" \"${KUBE_API_URL}/${NAMESPACE}/pods/cardano-db-sync-0/log?container=cardano-db-sync&sinceSeconds=${SINCE_SECONDS}\"
+    > /tmp/db-sync-log-tail \nif [ $? -ne 0 ]\nthen\n  exit 0\nelse\n  tail -n10 /tmp/db-sync-log-tail
+    | grep -q \"insertByronBlock\\|insert.*Block.*epoch.*slot.*block.*hash\\|getHistoryInterpreter\\|Finishing
+    epoch\\|Starting epoch\"\nfi\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: cardano-db-sync-configmap
+---
+apiVersion: v1
+data:
+  initContainer-entrypoint: |
+    rm -rf /config/lost+found
+
+    cp /opt/cardano/cnode/files/config.json /config/cardano-node-config.json
+    cp /opt/cardano/cnode/files/byron-genesis.json /config/
+    cp /opt/cardano/cnode/files/genesis.json /config/
+    cp /opt/cardano/cnode/files/alonzo-genesis.json /config/
+  initContainer-wait-for-tip: |2
+
+    function finish-socat {
+      pkill -f socat && sleep 1
+      rm -f ${CARDANO_NODE_SOCKET_PATH}
+    }
+
+    trap finish-socat EXIT
+
+    echo -n "[+] Waiting for cardano-node to become available (socat approach makes db-sync to freeze if it's not)..."
+    while ! `echo > /dev/tcp/${CARDANO_NODE_SOCKET_TCP_HOST}/${CARDANO_NODE_SOCKET_TCP_PORT}`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    rm -f ${CARDANO_NODE_SOCKET_PATH}
+    socat UNIX-LISTEN:${CARDANO_NODE_SOCKET_PATH},fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof &
+    while ! `timeout 10 cardano-cli query tip --mainnet 2>&1 | grep -q "epoch\|NodeToClientVersionData"`
+    do
+      sleep 1
+      echo -n .
+    done
+
+    cardano-cli query tip --mainnet
+    if [ $? -eq 0 ]
+    then
+      MAGIC_ARG="--mainnet"
+    else
+      MAGIC_ARG="--testnet-magic $(cardano-cli query tip --mainnet 2>&1 | sed 's|\(.*NodeToClientVersionData.*\)unNetworkMagic = \(.*\)}}.*/=\(.*\)|\2|g' | xargs echo)"
+    fi
+
+    DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
+    echo -n "[+] Waiting for db to reach tip..."
+    while [[ $(cardano-cli query tip ${MAGIC_ARG} | jq -r .syncProgress | awk -F. '{print $1}') -lt 99  ]] && [[ ${DB_EPOCH} -lt $(cardano-cli query tip ${MAGIC_ARG} | jq -r .epoch) ]]
+    do
+      echo -n .
+      sleep 60
+      DB_EPOCH=$(psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -tA -P pager=off -c 'select no from epoch order by id desc limit 1;' ${POSTGRES_DB})
+    done
+
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+
+    echo -n "[!] Waiting for db-sync to be initialized..."
+    while [[ -z $(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^cardano-db-sync) ]]
+    do
+      echo -n .
+      sleep 20
+    done
+kind: ConfigMap
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: cardano-graphql-configmap
+---
+apiVersion: v1
+data:
+  config.json: |
+    {
+      "ApplicationName": "cardano-sl",
+      "ApplicationVersion": 0,
+      "AlonzoGenesisFile": "/opt/cardano/cnode/files/alonzo-genesis.json",
+      "AlonzoGenesisHash": "7e94a15f55d1e82d10f09203fa1d40f8eede58fd8066542cf6566008068ed874",
+      "ByronGenesisFile": "/opt/cardano/cnode/files/byron-genesis.json",
+      "ByronGenesisHash": "96fceff972c2c06bd3bb5243c39215333be6d56aaf4823073dca31afe5038471",
+      "LastKnownBlockVersion-Alt": 0,
+      "LastKnownBlockVersion-Major": 4,
+      "LastKnownBlockVersion-Minor": 0,
+      "MaxKnownMajorProtocolVersion": 4,
+      "PBftSignatureThreshold": 0.9,
+      "MaxConcurrencyDeadline": 1,
+      "NumCoreNodes": 1,
+      "Protocol": "Cardano",
+      "SocketPath": "/opt/cardano/cnode/sockets/node0.socket",
+      "RequiresNetworkMagic": "RequiresMagic",
+      "ShelleyGenesisFile": "/opt/cardano/cnode/files/genesis.json",
+      "ShelleyGenesisHash": "849a1764f152e1b09c89c0dfdbcbdd38d711d1fec2db5dfa0f87cf2737a0eaf4",
+      "SocketPath": "/opt/cardano/cnode/sockets/node0.socket",
+      "EnableLogMetrics": false,
+      "EnableLogging": true,
+      "TraceBlockFetchClient": true,
+      "TraceBlockFetchDecisions": true,
+      "TraceBlockFetchProtocol": true,
+      "TraceBlockFetchProtocolSerialised": true,
+      "TraceBlockFetchServer": true,
+      "TraceChainDb": true,
+      "TraceChainSyncBlockServer": true,
+      "TraceChainSyncClient": true,
+      "TraceChainSyncHeaderServer": true,
+      "TraceChainSyncProtocol": true,
+      "TraceDNSResolver": false,
+      "TraceDNSSubscription": false,
+      "TraceErrorPolicy": true,
+      "TraceForge": true,
+      "TraceHandshake": true,
+      "TraceIpSubscription": true,
+      "TraceLocalChainSyncProtocol": true,
+      "TraceLocalErrorPolicy": true,
+      "TraceLocalHandshake": false,
+      "TraceLocalTxSubmissionProtocol": true,
+      "TraceLocalTxSubmissionServer": true,
+      "TraceMempool": true,
+      "TraceMux": false,
+      "TraceTxInbound": true,
+      "TraceTxOutbound": true,
+      "TraceTxSubmissionProtocol": true,
+      "TracingVerbosity": "NormalVerbosity",
+      "TurnOnLogMetrics": false,
+      "TurnOnLogging": true,
+      "defaultBackends": [
+        "KatipBK"
+      ],
+      "defaultScribes": [
+        [
+          "StdoutSK",
+          "stdout"
+        ]
+      ],
+      "hasEKG": 12788,
+      "hasPrometheus": [
+        "0.0.0.0",
+        12798
+      ],
+      "minSeverity": "Info",
+      "options": {
+        "mapBackends": {
+          "cardano.node.metrics.Forge": [
+             "EKGViewBK"
+          ],
+          "cardano.node.metrics": [
+            "EKGViewBK"
+          ],
+          "cardano.node.resources": [
+            "EKGViewBK"
+          ]
+        },
+        "mapSubtrace": {
+          "cardano.node.metrics": {
+            "subtrace": "Neutral"
+          }
+        }
+      },
+      "rotation": {
+        "rpKeepFilesNum": 10,
+        "rpLogLimitBytes": 10000000,
+        "rpMaxAgeHours": 24
+      },
+      "setupBackends": [
+        "KatipBK",
+        "EKGViewBK"
+      ],
+      "setupScribes": [
+        {
+          "scFormat": "ScText",
+          "scKind": "StdoutSK",
+          "scName": "stdout",
+          "scRotation": null
+        }
+      ]
+    }
+  topology.json.passive: |
+    {
+       "Producers": [
+          {
+            "addr": "relays-new.cardano-testnet.iohkdev.io",
+            "port": 3001,
+            "valency": 2
+          }
+       ]
+     }
+kind: ConfigMap
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: cardano-node
+---
+apiVersion: v1
+data:
+  POSTGRES_DB: cexplorer
+  POSTGRES_HOST: init0-postgresql-ha-postgresql
+  POSTGRES_HOST_RO: init0-postgresql-ha-postgresql
+  POSTGRES_HOST_RW: init0-postgresql-ha-postgresql
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: postgres
+  POSTGRES_USER_RO: dandelion_ro
+  chisel-auth-file: |
+    {
+      "admin:CHANGEME": [""]
+    }
+kind: ConfigMap
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: common-env
+---
+apiVersion: v1
+data:
+  pre-stop.sh: |-
+    #!/bin/bash
+    set -o errexit
+    set -o pipefail
+    set -o nounset
+
+    # Debug section
+    exec 3>&1
+    exec 4>&2
+
+    # Load Libraries
+    . /opt/bitnami/scripts/liblog.sh
+    . /opt/bitnami/scripts/libpostgresql.sh
+    . /opt/bitnami/scripts/librepmgr.sh
+
+    # Auxiliary functions
+    is_new_primary_ready() {
+        return_value=1
+        currenty_primary_node="$(repmgr_get_primary_node)"
+        currenty_primary_host="$(echo $currenty_primary_node | awk '{print $1}')"
+
+        info "$currenty_primary_host != $REPMGR_NODE_NETWORK_NAME"
+        if [[ $(echo $currenty_primary_node | wc -w) -eq 2 ]] && [[ "$currenty_primary_host" != "$REPMGR_NODE_NETWORK_NAME" ]]; then
+            info "New primary detected, leaving the cluster..."
+            return_value=0
+        else
+            info "Waiting for a new primary to be available..."
+        fi
+        return $return_value
+    }
+
+    export MODULE="pre-stop-hook"
+
+    if [[ "${BITNAMI_DEBUG}" == "true" ]]; then
+        info "Bash debug is on"
+    else
+        info "Bash debug is off"
+        exec 1>/dev/null
+        exec 2>/dev/null
+    fi
+
+    # Load PostgreSQL & repmgr environment variables
+    . /opt/bitnami/scripts/postgresql-env.sh
+
+    postgresql_enable_nss_wrapper
+
+    # Prepare env vars for managing roles
+    primary_node="$(repmgr_get_primary_node)"
+    primary_host="$(echo $primary_node | awk '{print $1}')"
+
+    # Stop postgresql for graceful exit.
+    postgresql_stop
+
+    if [[ "$primary_host" == "$REPMGR_NODE_NETWORK_NAME" ]]; then
+        info "Primary node need to wait for a new primary node before leaving the cluster"
+        retry_while is_new_primary_ready 10 5
+    else
+        info "Standby node doesn't need to wait, leaving the cluster."
+    fi
+kind: ConfigMap
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-postgresql-hooks-scripts
+---
+apiVersion: v1
+data:
+  asset-registry-update: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    PODS_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*asset-registry-update | wc -l)
+    if [ ${PODS_RUNNING} -lt 2 ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
+      bash -x asset-registry-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+  grant-permissions.sql.tpl: |
+    GRANT SELECT ON ALL TABLES IN SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
+    GRANT USAGE ON SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
+    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
+  initContainer-entrypoint: |
+    while [ -z "$(psql -tA -P pager=off -c 'SELECT schema_name FROM information_schema.schemata' | grep ^${PGRST_DB_SCHEMA}$)" ]
+    do
+      sleep 1
+    done
+    envsubst < /configmap/grant-permissions.sql.tpl > /tmp/grant-permissions.sql
+    psql -f /tmp/grant-permissions.sql
+  koios-deploy-sql-entrypoint: |
+    function init {
+
+      export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+      KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+      NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+
+
+      touch /tmp/.pgpass && export PGPASSFILE=/tmp/.pgpass
+      export CONFIG=${CNODE_CONFIG_FILE}
+      export BRANCH=${KOIOS_BRANCH}
+      export URL_RAW="https://raw.githubusercontent.com/cardano-community/guild-operators/${BRANCH}"
+      export DB_SCRIPTS_URL="${URL_RAW}/scripts/grest-helper-scripts/db-scripts"
+
+      export CURL_TIMEOUT=20
+    }
+
+    init
+
+    curl -LO https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/scripts/grest-helper-scripts/setup-grest.sh
+
+    sed -i '/.*# Execution.*/,$d' setup-grest.sh
+
+    source setup-grest.sh
+
+    function setup_cron_jobs {
+      return 0
+    }
+
+    echo -n "[!] Waiting for db-sync to be initialized..."
+    while [[ -z $(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^cardano-db-sync) ]]
+    do
+      echo -n .
+      sleep 20
+    done
+
+    echo -n "[!] Waiting for db to reach Mary era if needed..."
+    while [[ "$(psql -qtAX -d ${PGDATABASE} -c 'SELECT protocol_major FROM public.param_proposal WHERE protocol_major >= 4 ORDER BY protocol_major DESC LIMIT 1' 2>/dev/null)" == "" ]]
+    do
+      echo -n .
+      sleep 20
+    done
+
+    setup_db_basics
+    deploy_query_updates
+
+    POSTGREST_POD=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r .items[].metadata.name | grep ^koios-api)
+    curl -m 30 -sSk -X DELETE -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods/${POSTGREST_POD}"
+  pool-history-cache-update: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    PODS_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*pool-history-cache-update | wc -l)
+    if [ ${PODS_RUNNING} -lt 2 ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
+      bash -x pool-history-cache-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+  stake-distribution-update: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    PODS_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*stake-distribution-update | wc -l)
+    if [ ${PODS_RUNNING} -lt 2 ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
+      bash -x stake-distribution-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+kind: ConfigMap
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: koios-configmap
+---
+apiVersion: v1
+data:
+  initContainer-entrypoint: |
+    rm -rf /config/lost+found
+
+    #cp /opt/cardano/cnode/files/config.json /config/cardano-node-config.json
+    #cp /opt/cardano/cnode/files/genesis.json /config/genesis-shelley.json
+    #cp /opt/cardano/cnode/files/byron-genesis.json /config/genesis-byron.json
+
+    if [ ! -e /config/network/cardano-node/config.json ]
+    then
+      mkdir -p /config/network/cardano-node
+      case "${OGMIOS_NETWORK}" in
+        "mainnet")
+          curl -sLo /config/network/cardano-node/config.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/mainnet/cardano-node/config.json
+        ;;
+        "testnet")
+          curl -sLo /config/network/cardano-node/config.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/testnet/cardano-node/config.json
+        ;;
+      esac
+    fi
+    if [ ! -e /config/network/genesis/genesis.json ]
+    then
+      mkdir -p /config/network/genesis
+      case "${OGMIOS_NETWORK}" in
+        "mainnet")
+          curl -sLo /config/network/genesis/byron.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/mainnet/genesis/byron.json
+          curl -sLo /config/network/genesis/shelley.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/mainnet/genesis/shelley.json
+          curl -sLo /config/network/genesis/alonzo.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/mainnet/genesis/alonzo.json
+        ;;
+        "testnet")
+          curl -sLo /config/network/genesis/byron.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/testnet/genesis/byron.json
+          curl -sLo /config/network/genesis/shelley.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/testnet/genesis/shelley.json
+          curl -sLo /config/network/genesis/alonzo.json https://raw.githubusercontent.com/input-output-hk/cardano-configurations/60dd866eaf6eea3c9d27bfaa8bee9908722876ac/network/testnet/genesis/alonzo.json
+        ;;
+      esac
+    fi
+kind: ConfigMap
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: ogmios-configmap
+---
+apiVersion: v1
+data:
+  admin-password: WkpBNDdzRTRxTg==
+kind: Secret
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/component: pgpool
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-pgpool
+type: Opaque
+---
+apiVersion: v1
+data:
+  passwords: cjRuZDBtMXozZHAwc3Q=
+  usernames: ZGFuZGVsaW9uX3Jv
+kind: Secret
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/component: pgpool
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-pgpool-custom-users
+type: Opaque
+---
+apiVersion: v1
+data:
+  postgresql-password: dXBRd2hLTWU2MA==
+  repmgr-password: WFhXdnVPSnB0cA==
+kind: Secret
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-postgresql
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-explorer-api
+    project_name: dandelion
+  name: cardano-explorer-api
+spec:
+  ports:
+  - name: "8101"
+    port: 8101
+    targetPort: 8100
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-explorer-api
+    project_name: dandelion
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-graphql
+    project_name: dandelion
+  name: cardano-graphql
+spec:
+  ports:
+  - name: "3100"
+    port: 3100
+    targetPort: 3100
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-graphql
+    project_name: dandelion
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-node
+    project_name: dandelion
+  name: cardano-node-headless
+spec:
+  clusterIP: None
+  ports:
+  - name: socat-tcp-server
+    port: 30000
+    protocol: TCP
+    targetPort: 30000
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-node
+    project_name: dandelion
+  sessionAffinity: ClientIP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-rosetta
+    project_name: dandelion
+  name: cardano-rosetta
+spec:
+  ports:
+  - name: "8080"
+    port: 8080
+    targetPort: 8080
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-rosetta
+    project_name: dandelion
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -c --controller deployment --volumes persistentVolumeClaim
+    kompose.version: 1.21.0 (992df58d8)
+    note: free-apis!
+  creationTimestamp: null
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-submit-api
+    project_name: dandelion
+  name: cardano-submit-api
+spec:
+  ports:
+  - name: "8091"
+    port: 8091
+    targetPort: 8090
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-submit-api
+    project_name: dandelion
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-node
+    project_name: dandelion
+  name: chisel-server
+spec:
+  ports:
+  - name: chisel-server
+    port: 40000
+    targetPort: 40000
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-node
+    project_name: dandelion
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: hasura
+    project_name: dandelion
+  name: hasura-headless
+spec:
+  clusterIP: None
+  ports:
+  - name: hasura
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: hasura
+    project_name: dandelion
+  sessionAffinity: ClientIP
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/component: pgpool
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-pgpool
+spec:
+  ports:
+  - name: postgresql
+    nodePort: null
+    port: 5432
+    protocol: TCP
+    targetPort: postgresql
+  selector:
+    app.kubernetes.io/component: pgpool
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-postgresql
+spec:
+  ports:
+  - name: postgresql
+    port: 5432
+    protocol: TCP
+    targetPort: postgresql
+  selector:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-postgresql-headless
+spec:
+  clusterIP: None
+  ports:
+  - name: postgresql
+    port: 5432
+    protocol: TCP
+    targetPort: postgresql
+  selector:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: koios-api
+    project_name: dandelion
+  name: koios-api
+spec:
+  ports:
+  - name: "3000"
+    port: 3000
+    targetPort: 3000
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: koios-api
+    project_name: dandelion
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: ogmios
+    project_name: dandelion
+  name: ogmios
+spec:
+  ports:
+  - name: "1337"
+    port: 1337
+    targetPort: 1337
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: ogmios
+    project_name: dandelion
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: postgrest
+    project_name: dandelion
+  name: postgrest
+spec:
+  ports:
+  - name: "3000"
+    port: 3000
+    targetPort: 3000
+  selector:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: postgrest
+    project_name: dandelion
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-explorer-api
+    project_name: dandelion
+  name: cardano-explorer-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: cardano-explorer-api
+      project_name: dandelion
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: cardano-explorer-api
+        project_name: dandelion
+    spec:
+      containers:
+      - env:
+        - name: NETWORK
+          value: mainnet
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        image: inputoutput/cardano-explorer-api:3.1.2
+        imagePullPolicy: IfNotPresent
+        name: cardano-explorer-api
+        ports:
+        - containerPort: 8100
+        resources: {}
+        volumeMounts:
+        - mountPath: /run/secrets/common-env
+          name: common-env
+          readOnly: true
+        - mountPath: /run/secrets/postgres-password
+          name: postgres-password
+          readOnly: true
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - configMap:
+          name: common-env
+        name: common-env
+      - name: postgres-password
+        secret:
+          items:
+          - key: postgresql-password
+            path: POSTGRES_PASSWORD
+          secretName: init0-postgresql-ha-postgresql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-graphql
+    project_name: dandelion
+  name: cardano-graphql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: cardano-graphql
+      project_name: dandelion
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: cardano-graphql
+        project_name: dandelion
+    spec:
+      containers:
+      - env:
+        - name: ALLOW_INTROSPECTION
+          value: "true"
+        - name: CACHE_ENABLED
+          value: "true"
+        - name: LOGGER_MIN_SEVERITY
+          value: info
+        - name: CARDANO_NODE_CONFIG_PATH
+          value: /opt/cardano/cnode/files/cardano-node-config.json
+        - name: HASURA_URI
+          value: http://hasura-headless:8080
+        - name: OGMIOS_HOST
+          value: ogmios
+        - name: OGMIOS_PORT
+          value: "1337"
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB_FILE
+          value: /run/secrets/common-env/POSTGRES_DB
+        - name: POSTGRES_USER_FILE
+          value: /run/secrets/common-env/POSTGRES_USER
+        - name: POSTGRES_PASSWORD_FILE
+          value: /run/secrets/postgres-password/POSTGRES_PASSWORD
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
+        image: inputoutput/cardano-graphql:6.1.0-testnet
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          initialDelaySeconds: 1800
+          periodSeconds: 15
+          tcpSocket:
+            port: 3100
+        name: cardano-graphql
+        ports:
+        - containerPort: 3100
+        resources: {}
+        volumeMounts:
+        - mountPath: /opt/cardano/cnode/files
+          name: cardano-graphql-config
+        - mountPath: /run/secrets/common-env
+          name: common-env
+          readOnly: true
+        - mountPath: /run/secrets/postgres-password
+          name: postgres-password
+          readOnly: true
+        - mountPath: /ipc
+          name: node-ipc
+      - command:
+        - sh
+        - -c
+        - rm -f /ipc/node.socket; socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: cardano-node-headless
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        - name: SOCAT_TIMEOUT
+          value: "3600"
+        image: alpine/socat
+        name: socat-socket-server
+        volumeMounts:
+        - mountPath: /ipc
+          name: node-ipc
+      initContainers:
+      - command:
+        - bash
+        - /configmap/initContainer-entrypoint
+        image: repsistance/cardano-node:iohk-tn-passive-1.32.1-0
+        imagePullPolicy: IfNotPresent
+        name: configure
+        volumeMounts:
+        - mountPath: /config
+          name: cardano-graphql-config
+        - mountPath: /configmap
+          name: cardano-graphql-configmap
+      - command:
+        - bash
+        - -x
+        - /configmap/initContainer-wait-for-tip
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: cardano-node-headless
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        - name: SOCAT_TIMEOUT
+          value: "3600"
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+        imagePullPolicy: IfNotPresent
+        name: wait-for-tip
+        volumeMounts:
+        - mountPath: /config
+          name: cardano-graphql-config
+        - mountPath: /configmap
+          name: cardano-graphql-configmap
+        - mountPath: /ipc
+          name: node-ipc
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - emptyDir: {}
+        name: node-ipc
+      - emptyDir: {}
+        name: cardano-graphql-config
+      - configMap:
+          name: cardano-graphql-configmap
+        name: cardano-graphql-configmap
+      - configMap:
+          name: common-env
+        name: common-env
+      - name: postgres-password
+        secret:
+          items:
+          - key: postgresql-password
+            path: POSTGRES_PASSWORD
+          secretName: init0-postgresql-ha-postgresql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-rosetta
+    project_name: dandelion
+  name: cardano-rosetta
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: cardano-rosetta
+      project_name: dandelion
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: cardano-rosetta
+        project_name: dandelion
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - DB_CONNECTION_STRING="postgresql://${POSTGRES_USER}:${POSTGRES_PASS}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+          node /cardano-rosetta-server/dist/src/server/index.js
+        env:
+        - name: BIND_ADDRESS
+          value: 0.0.0.0
+        - name: PORT
+          value: "8080"
+        - name: LOGGER_LEVEL
+          value: debug
+        - name: DEFAULT_RELATIVE_TTL
+          value: "1000"
+        - name: NODE_ENV
+          value: production
+        - name: PAGE_SIZE
+          value: "30"
+        - name: GENESIS_SHELLEY_PATH
+          value: /config/genesis/shelley.json
+        - name: TOPOLOGY_FILE_PATH
+          value: /config/cardano-node/topology.json
+        - name: CARDANO_CLI_PATH
+          value: /usr/local/bin/cardano-cli
+        - name: CARDANO_NODE_PATH
+          value: /usr/local/bin/cardano-node
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RO
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_PASS
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        image: inputoutput/cardano-rosetta:1.5.0-testnet
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          initialDelaySeconds: 15
+          periodSeconds: 15
+          tcpSocket:
+            port: 8080
+        name: cardano-rosetta
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          initialDelaySeconds: 15
+          periodSeconds: 15
+          tcpSocket:
+            port: 8080
+        resources: {}
+        volumeMounts:
+        - mountPath: /run/secrets/common-env
+          name: common-env
+          readOnly: true
+        - mountPath: /ipc
+          name: node-ipc
+      - command:
+        - sh
+        - -c
+        - rm -f /ipc/node.socket; socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: cardano-node-headless
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        - name: SOCAT_TIMEOUT
+          value: "3600"
+        image: alpine/socat
+        name: socat-socket-server
+        volumeMounts:
+        - mountPath: /ipc
+          name: node-ipc
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - emptyDir: {}
+        name: node-ipc
+      - configMap:
+          name: common-env
+        name: common-env
+      - name: postgres-password
+        secret:
+          items:
+          - key: passwords
+            path: POSTGREST_RO_PASSWORD
+          secretName: init0-postgresql-ha-pgpool-custom-users
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-submit-api
+    project_name: dandelion
+  name: cardano-submit-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: cardano-submit-api
+      project_name: dandelion
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: cardano-submit-api
+        project_name: dandelion
+    spec:
+      containers:
+      - env:
+        - name: NETWORK
+          value: testnet
+        image: inputoutput/cardano-submit-api:3.1.2
+        imagePullPolicy: IfNotPresent
+        name: cardano-submit-api
+        ports:
+        - containerPort: 8090
+        resources: {}
+        volumeMounts:
+        - mountPath: /node-ipc
+          name: node-ipc
+      - command:
+        - sh
+        - -c
+        - rm -f /ipc/node.socket; socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: cardano-node-headless
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        image: alpine/socat
+        name: socat-socket-server
+        volumeMounts:
+        - mountPath: /ipc
+          name: node-ipc
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - emptyDir: {}
+        name: node-ipc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: hasura
+    project_name: dandelion
+  name: hasura
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: hasura
+      project_name: dandelion
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: hasura
+        project_name: dandelion
+    spec:
+      containers:
+      - env:
+        - name: HASURA_GRAPHQL_ENABLED_LOG_TYPES
+          value: startup, http-log, webhook-log, websocket-log, query-log
+        - name: HASURA_GRAPHQL_ENABLE_CONSOLE
+          value: "true"
+        - name: HASURA_GRAPHQL_ENABLE_TELEMETRY
+          value: "false"
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        image: inputoutput/cardano-graphql-hasura:6.1.0
+        imagePullPolicy: IfNotPresent
+        name: hasura
+        ports:
+        - containerPort: 8080
+        resources: {}
+        volumeMounts:
+        - mountPath: /run/secrets/common-env
+          name: common-env
+          readOnly: true
+        - mountPath: /run/secrets/postgres-password
+          name: postgres-password
+          readOnly: true
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - configMap:
+          name: common-env
+        name: common-env
+      - name: postgres-password
+        secret:
+          items:
+          - key: postgresql-password
+            path: POSTGRES_PASSWORD
+          secretName: init0-postgresql-ha-postgresql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/component: pgpool
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-pgpool
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: pgpool
+      app.kubernetes.io/instance: init0
+      app.kubernetes.io/name: postgresql-ha
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      project_name: dandelion
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        app.kubernetes.io/component: pgpool
+        app.kubernetes.io/instance: init0
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: postgresql-ha
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        helm.sh/chart: postgresql-ha-7.7.1
+        project_name: dandelion
+    spec:
+      affinity:
+        nodeAffinity: null
+        podAffinity: null
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: pgpool
+                  app.kubernetes.io/instance: init0
+                  app.kubernetes.io/name: postgresql-ha
+                  cardano_network: testnet
+                  cardano_node_type: haskell
+                  environment: production
+                  project_name: dandelion
+              namespaces:
+              - default
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - env:
+        - name: BITNAMI_DEBUG
+          value: "false"
+        - name: PGPOOL_POSTGRES_CUSTOM_USERS
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: PGPOOL_POSTGRES_CUSTOM_PASSWORDS
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: PGPOOL_BACKEND_NODES
+          value: 0:init0-postgresql-ha-postgresql-0.init0-postgresql-ha-postgresql-headless:5432,
+        - name: PGPOOL_SR_CHECK_USER
+          value: repmgr
+        - name: PGPOOL_SR_CHECK_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: repmgr-password
+              name: init0-postgresql-ha-postgresql
+        - name: PGPOOL_SR_CHECK_DATABASE
+          value: postgres
+        - name: PGPOOL_ENABLE_LDAP
+          value: "no"
+        - name: PGPOOL_POSTGRES_USERNAME
+          value: postgres
+        - name: PGPOOL_POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        - name: PGPOOL_ADMIN_USERNAME
+          value: admin
+        - name: PGPOOL_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: init0-postgresql-ha-pgpool
+        - name: PGPOOL_ENABLE_LOAD_BALANCING
+          value: "yes"
+        - name: PGPOOL_ENABLE_LOG_CONNECTIONS
+          value: "no"
+        - name: PGPOOL_ENABLE_LOG_HOSTNAME
+          value: "yes"
+        - name: PGPOOL_ENABLE_LOG_PER_NODE_STATEMENT
+          value: "no"
+        - name: PGPOOL_CHILD_LIFE_TIME
+          value: ""
+        - name: PGPOOL_ENABLE_TLS
+          value: "no"
+        envFrom: null
+        image: docker.io/bitnami/pgpool:4.2.6-debian-10-r11
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - /opt/bitnami/scripts/pgpool/healthcheck.sh
+          failureThreshold: 5
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: pgpool
+        ports:
+        - containerPort: 5432
+          name: postgresql
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - bash
+            - -ec
+            - PGPASSWORD=${PGPOOL_POSTGRES_PASSWORD} psql -U "postgres" -d "cexplorer"
+              -h /opt/bitnami/pgpool/tmp -tA -c "SELECT 1" >/dev/null
+          failureThreshold: 5
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits: {}
+          requests: {}
+        securityContext:
+          runAsUser: 1001
+        volumeMounts: null
+      initContainers: null
+      securityContext:
+        fsGroup: 1001
+      volumes: null
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: koios-api
+    project_name: dandelion
+  name: koios-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: koios-api
+      project_name: dandelion
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: koios-api
+        project_name: dandelion
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - export PGRST_DB_URI=postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE};
+          /bin/postgrest
+        env:
+        - name: PGHOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RO
+              name: common-env
+        - name: PGPORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: PGRST_DB_ANON_ROLE
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: PGRST_DB_SCHEMA
+          value: grest
+        image: gimbalabs/postgrest:v8.0.0
+        imagePullPolicy: IfNotPresent
+        name: koios-api
+        ports:
+        - containerPort: 3000
+        resources: {}
+        volumeMounts:
+        - mountPath: /run/secrets/common-env
+          name: common-env
+          readOnly: true
+        - mountPath: /run/secrets/postgres-password
+          name: postgres-password
+          readOnly: true
+      initContainers:
+      - command:
+        - bash
+        - -x
+        - /configmap/initContainer-entrypoint
+        env:
+        - name: PGRST_DB_SCHEMA
+          value: grest
+        - name: PGHOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: PGPORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: PGUSER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+        imagePullPolicy: IfNotPresent
+        name: configure
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /configmap
+          name: koios-configmap
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - configMap:
+          name: common-env
+        name: common-env
+      - name: postgres-password
+        secret:
+          items:
+          - key: passwords
+            path: POSTGREST_RO_PASSWORD
+          secretName: init0-postgresql-ha-pgpool-custom-users
+      - configMap:
+          name: koios-configmap
+        name: koios-configmap
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: ogmios
+    project_name: dandelion
+  name: ogmios
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: ogmios
+      project_name: dandelion
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: ogmios
+        project_name: dandelion
+    spec:
+      containers:
+      - command:
+        - sh
+        - -xc
+        - ogmios --node-socket ${NODE_SOCKET_PATH} --host ${LISTEN_HOST} --port ${LISTEN_PORT}
+          --log-level ${LOG_LEVEL} --node-config ${NODE_CONFIG_PATH}
+        env:
+        - name: OGMIOS_NETWORK
+          value: testnet
+        - name: NODE_CONFIG_PATH
+          value: /config/network/cardano-node/config.json
+        - name: LISTEN_HOST
+          value: 0.0.0.0
+        - name: LISTEN_PORT
+          value: "1337"
+        - name: NODE_SOCKET_PATH
+          value: /node-ipc/node.socket
+        - name: LOG_LEVEL
+          value: Debug
+        image: cardanosolutions/ogmios:v4.2.1-testnet
+        imagePullPolicy: IfNotPresent
+        name: ogmios
+        ports:
+        - containerPort: 1337
+        resources: {}
+        volumeMounts:
+        - mountPath: /node-ipc
+          name: node-ipc
+        - mountPath: /config
+          name: ogmios-config
+      - command:
+        - sh
+        - -c
+        - rm -f /ipc/node.socket; socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: cardano-node-headless
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        image: alpine/socat
+        name: socat-socket-server
+        volumeMounts:
+        - mountPath: /ipc
+          name: node-ipc
+      initContainers:
+      - command:
+        - bash
+        - /configmap/initContainer-entrypoint
+        env:
+        - name: OGMIOS_NETWORK
+          value: testnet
+        image: repsistance/cardano-node:iohk-mn-passive-1.32.1-0
+        imagePullPolicy: IfNotPresent
+        name: configure
+        volumeMounts:
+        - mountPath: /config
+          name: ogmios-config
+        - mountPath: /configmap
+          name: ogmios-configmap
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - emptyDir: {}
+        name: node-ipc
+      - emptyDir: {}
+        name: ogmios-config
+      - configMap:
+          name: ogmios-configmap
+        name: ogmios-configmap
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: postgrest
+    project_name: dandelion
+  name: postgrest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: postgrest
+      project_name: dandelion
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: postgrest
+        project_name: dandelion
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - export PGRST_DB_URI=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB};
+          /bin/postgrest
+        env:
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RO
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: PGRST_DB_ANON_ROLE
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: PGRST_DB_SCHEMA
+          value: public
+        image: gimbalabs/postgrest:v9.0.0
+        imagePullPolicy: IfNotPresent
+        name: postgrest
+        ports:
+        - containerPort: 3000
+        resources: {}
+        volumeMounts:
+        - mountPath: /run/secrets/common-env
+          name: common-env
+          readOnly: true
+        - mountPath: /run/secrets/postgres-password
+          name: postgres-password
+          readOnly: true
+      initContainers:
+      - command:
+        - bash
+        - -x
+        - /configmap/create-db-ro-user-entrypoint
+        env:
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+        imagePullPolicy: IfNotPresent
+        name: configure
+        volumeMounts:
+        - mountPath: /configmap
+          name: cardano-db-sync-configmap
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - configMap:
+          name: common-env
+        name: common-env
+      - name: postgres-password
+        secret:
+          items:
+          - key: passwords
+            path: POSTGREST_RO_PASSWORD
+          secretName: init0-postgresql-ha-pgpool-custom-users
+      - configMap:
+          name: postgrest-configmap
+        name: postgrest-configmap
+      - configMap:
+          name: cardano-db-sync-configmap
+        name: cardano-db-sync-configmap
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-db-sync
+    project_name: dandelion
+  name: cardano-db-sync
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: cardano-db-sync
+      project_name: dandelion
+  serviceName: cardano-db-sync
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: cardano-db-sync
+        project_name: dandelion
+    spec:
+      containers:
+      - env:
+        - name: EXTENDED
+          value: "true"
+        - name: NETWORK
+          value: testnet
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        image: gimbalabs/cardano-db-sync:12.0.0
+        imagePullPolicy: IfNotPresent
+        name: cardano-db-sync
+        resources: {}
+        volumeMounts:
+        - mountPath: /node-ipc
+          name: node-ipc
+        - mountPath: /tmp
+          name: node-ipc
+        - mountPath: /run/secrets/common-env
+          name: common-env
+          readOnly: true
+        - mountPath: /run/secrets/postgres-password
+          name: postgres-password
+          readOnly: true
+        - mountPath: /var/lib/cdbsync
+          name: dbsync-statedir
+        - mountPath: /configmap
+          name: cardano-db-sync-configmap
+        workingDir: /var/lib/cdbsync
+      - command:
+        - sh
+        - -c
+        - rm -f /ipc/node.socket; socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: cardano-node-headless
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        - name: SOCAT_TIMEOUT
+          value: "3600"
+        image: alpine/socat
+        name: socat-socket-server
+        volumeMounts:
+        - mountPath: /ipc
+          name: node-ipc
+      initContainers:
+      - command:
+        - bash
+        - -x
+        - /configmap/initContainer-entrypoint
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: cardano-node-headless
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        - name: SOCAT_TIMEOUT
+          value: "3600"
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
+        - name: RESTORE_SNAPSHOT
+          value: "true"
+        - name: DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI
+          value: s3://updates-cardano-testnet/cardano-db-sync/12/
+        - name: DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI
+          value: s3://update-cardano-mainnet.iohk.io/cardano-db-sync/12/
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+        imagePullPolicy: IfNotPresent
+        name: configure
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /configmap
+          name: cardano-db-sync-configmap
+        - mountPath: /db-sync-statedir
+          name: dbsync-statedir
+        - mountPath: /aux-data-dir
+          name: node-ipc
+        - mountPath: /ipc
+          name: node-ipc
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - emptyDir: {}
+        name: node-ipc
+      - configMap:
+          name: common-env
+        name: common-env
+      - name: postgres-password
+        secret:
+          items:
+          - key: postgresql-password
+            path: POSTGRES_PASSWORD
+          secretName: init0-postgresql-ha-postgresql
+      - name: dbsync-statedir
+        persistentVolumeClaim:
+          claimName: dbsync-statedir
+      - configMap:
+          name: cardano-db-sync-configmap
+        name: cardano-db-sync-configmap
+  updateStrategy:
+    type: OnDelete
+  volumeClaimTemplates:
+  - metadata:
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        project_name: dandelion
+      name: dbsync-statedir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    io.kompose.service: cardano-node
+    project_name: dandelion
+  name: cardano-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      io.kompose.service: cardano-node
+      project_name: dandelion
+  serviceName: cardano-node
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        io.kompose.service: cardano-node
+        project_name: dandelion
+    spec:
+      containers:
+      - command:
+        - bash
+        - -c
+        - export HOME=/nonexistent; source $HOME/.baids/baids && set -x; ${NETWORK}-cnode-run-as-${CNODE_ROLE}
+          +RTS -N2 --disable-delayed-os-memory-return -T -I0 -A16m
+        env:
+        - name: NETWORK
+          value: iohk-tn
+        - name: CNODE_HOST_ADDR
+          value: 0.0.0.0
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
+        - name: CNODE_DB_PATH
+          value: /data/db
+        - name: CNODE_TOPOLOGY_FILE
+          value: /configmap/topology.json
+        - name: CNODE_CONFIG_FILE
+          value: /configmap/config.json
+        image: repsistance/cardano-node:iohk-tn-passive-1.32.1-0
+        imagePullPolicy: IfNotPresent
+        name: cardano-node
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /data/db
+          name: node-db
+        - mountPath: /ipc
+          name: node-ipc
+        - mountPath: /configmap
+          name: cardano-node-configmap
+      - command:
+        - sh
+        - -c
+        - /app/chisel server -v --authfile /common-env/chisel-auth-file -p ${PORT:-40000}
+        env:
+        - name: PORT
+          value: "40000"
+        image: jpillora/chisel
+        name: chisel-server
+        ports:
+        - containerPort: 40000
+        volumeMounts:
+        - mountPath: /common-env
+          name: common-env
+          readOnly: true
+      - command:
+        - sh
+        - -c
+        - socat TCP-LISTEN:${PORT},fork UNIX-CLIENT:/ipc/node.socket,ignoreeof
+        env:
+        - name: PORT
+          value: "30000"
+        image: alpine/socat
+        name: socat-tcp-server
+        ports:
+        - containerPort: 30000
+        volumeMounts:
+        - mountPath: /ipc
+          name: node-ipc
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - rm -rf /data/db/lost+found
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        name: remove-lost-n-found
+        resources: {}
+        volumeMounts:
+        - mountPath: /data/db
+          name: node-db
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - name: node-db
+        persistentVolumeClaim:
+          claimName: node-db
+      - emptyDir: {}
+        name: node-ipc
+      - configMap:
+          name: common-env
+        name: common-env
+      - configMap:
+          name: cardano-node
+        name: cardano-node-configmap
+  updateStrategy:
+    type: OnDelete
+  volumeClaimTemplates:
+  - metadata:
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        project_name: dandelion
+      name: node-db
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 8Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    app.kubernetes.io/component: postgresql
+    app.kubernetes.io/instance: init0
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: postgresql-ha
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    helm.sh/chart: postgresql-ha-7.7.1
+    project_name: dandelion
+  name: init0-postgresql-ha-postgresql
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: postgresql
+      app.kubernetes.io/instance: init0
+      app.kubernetes.io/name: postgresql-ha
+      cardano_network: testnet
+      cardano_node_type: haskell
+      environment: production
+      project_name: dandelion
+  serviceName: init0-postgresql-ha-postgresql-headless
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        app.kubernetes.io/component: postgresql
+        app.kubernetes.io/instance: init0
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: postgresql-ha
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        helm.sh/chart: postgresql-ha-7.7.1
+        project_name: dandelion
+    spec:
+      affinity:
+        nodeAffinity: null
+        podAffinity: null
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: postgresql
+                  app.kubernetes.io/instance: init0
+                  app.kubernetes.io/name: postgresql-ha
+                  cardano_network: testnet
+                  cardano_node_type: haskell
+                  environment: production
+                  project_name: dandelion
+              namespaces:
+              - default
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - env:
+        - name: BITNAMI_DEBUG
+          value: "false"
+        - name: POSTGRESQL_VOLUME_DIR
+          value: /bitnami/postgresql
+        - name: PGDATA
+          value: /bitnami/postgresql/data
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        - name: POSTGRES_DB
+          value: cexplorer
+        - name: POSTGRESQL_LOG_HOSTNAME
+          value: "true"
+        - name: POSTGRESQL_LOG_CONNECTIONS
+          value: "false"
+        - name: POSTGRESQL_LOG_DISCONNECTIONS
+          value: "false"
+        - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+          value: "off"
+        - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+          value: error
+        - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+          value: pgaudit, repmgr
+        - name: POSTGRESQL_ENABLE_TLS
+          value: "no"
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: REPMGR_UPGRADE_EXTENSION
+          value: "no"
+        - name: REPMGR_PGHBA_TRUST_ALL
+          value: "no"
+        - name: REPMGR_MOUNTED_CONF_DIR
+          value: /bitnami/repmgr/conf
+        - name: REPMGR_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: REPMGR_PARTNER_NODES
+          value: init0-postgresql-ha-postgresql-0.init0-postgresql-ha-postgresql-headless.$(REPMGR_NAMESPACE).svc.cluster.local,
+        - name: REPMGR_PRIMARY_HOST
+          value: init0-postgresql-ha-postgresql-0.init0-postgresql-ha-postgresql-headless.$(REPMGR_NAMESPACE).svc.cluster.local
+        - name: REPMGR_NODE_NAME
+          value: $(MY_POD_NAME)
+        - name: REPMGR_NODE_NETWORK_NAME
+          value: $(MY_POD_NAME).init0-postgresql-ha-postgresql-headless.$(REPMGR_NAMESPACE).svc.cluster.local
+        - name: REPMGR_LOG_LEVEL
+          value: NOTICE
+        - name: REPMGR_CONNECT_TIMEOUT
+          value: "5"
+        - name: REPMGR_RECONNECT_ATTEMPTS
+          value: "3"
+        - name: REPMGR_RECONNECT_INTERVAL
+          value: "5"
+        - name: REPMGR_USERNAME
+          value: repmgr
+        - name: REPMGR_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: repmgr-password
+              name: init0-postgresql-ha-postgresql
+        - name: REPMGR_DATABASE
+          value: repmgr
+        envFrom: null
+        image: docker.io/bitnami/postgresql-repmgr:11.14.0-debian-10-r12
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /pre-stop.sh
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            - -ec
+            - PGPASSWORD=$POSTGRES_PASSWORD psql -w -U "postgres" -d "cexplorer"  -h
+              127.0.0.1 -c "SELECT 1"
+          failureThreshold: 6
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: postgresql
+        ports:
+        - containerPort: 5432
+          name: postgresql
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - bash
+            - -ec
+            - PGPASSWORD=$POSTGRES_PASSWORD psql -w -U "postgres" -d "cexplorer"  -h
+              127.0.0.1 -c "SELECT 1"
+          failureThreshold: 6
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits: {}
+          requests: {}
+        securityContext:
+          runAsUser: 1001
+        volumeMounts:
+        - mountPath: /bitnami/postgresql
+          name: data
+        - mountPath: /pre-stop.sh
+          name: hooks-scripts
+          subPath: pre-stop.sh
+      initContainers: null
+      securityContext:
+        fsGroup: 1001
+      volumes:
+      - configMap:
+          defaultMode: 493
+          name: init0-postgresql-ha-postgresql-hooks-scripts
+        name: hooks-scripts
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        project_name: dandelion
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 40Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: koios-asset-registry-update
+spec:
+  jobTemplate:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        project_name: dandelion
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          annotations:
+            note: free-apis!
+          labels:
+            cardano_network: testnet
+            cardano_node_type: haskell
+            environment: production
+            project_name: dandelion
+        spec:
+          containers:
+          - command:
+            - bash
+            - -x
+            - /configmap/asset-registry-update
+            env:
+            - name: KOIOS_BRANCH
+              value: alpha
+            - name: CNODE_CONFIG_FILE
+              value: /cardano-node-configmap/config.json
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_HOST_RW
+                  name: common-env
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_PORT
+                  name: common-env
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_DB
+                  name: common-env
+            - name: PGUSER
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_USER
+                  name: common-env
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-password
+                  name: init0-postgresql-ha-postgresql
+            - name: PGRST_DB_SCHEMA
+              value: grest
+            image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+            name: koios-asset-registry-update
+            volumeMounts:
+            - mountPath: /configmap
+              name: koios-configmap
+            - mountPath: /cardano-node-configmap
+              name: cardano-node-configmap
+          restartPolicy: Never
+          serviceAccountName: koios-deploy-sql
+          volumes:
+          - configMap:
+              name: koios-configmap
+            name: koios-configmap
+          - configMap:
+              name: cardano-node
+            name: cardano-node-configmap
+      ttlSecondsAfterFinished: 540
+  schedule: '*/10 * * * *'
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: koios-pool-history-cache-update
+spec:
+  jobTemplate:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        project_name: dandelion
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          annotations:
+            note: free-apis!
+          labels:
+            cardano_network: testnet
+            cardano_node_type: haskell
+            environment: production
+            project_name: dandelion
+        spec:
+          containers:
+          - command:
+            - bash
+            - -x
+            - /configmap/pool-history-cache-update
+            env:
+            - name: KOIOS_BRANCH
+              value: alpha
+            - name: CNODE_CONFIG_FILE
+              value: /cardano-node-configmap/config.json
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_HOST_RW
+                  name: common-env
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_PORT
+                  name: common-env
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_DB
+                  name: common-env
+            - name: PGUSER
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_USER
+                  name: common-env
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-password
+                  name: init0-postgresql-ha-postgresql
+            - name: PGRST_DB_SCHEMA
+              value: grest
+            image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+            name: koios-pool-history-cache-update
+            volumeMounts:
+            - mountPath: /configmap
+              name: koios-configmap
+            - mountPath: /cardano-node-configmap
+              name: cardano-node-configmap
+          restartPolicy: Never
+          serviceAccountName: koios-deploy-sql
+          volumes:
+          - configMap:
+              name: koios-configmap
+            name: koios-configmap
+          - configMap:
+              name: cardano-node
+            name: cardano-node-configmap
+      ttlSecondsAfterFinished: 540
+  schedule: '*/10 * * * *'
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: koios-stake-distribution-update
+spec:
+  jobTemplate:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        project_name: dandelion
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          annotations:
+            note: free-apis!
+          labels:
+            cardano_network: testnet
+            cardano_node_type: haskell
+            environment: production
+            project_name: dandelion
+        spec:
+          containers:
+          - command:
+            - bash
+            - -x
+            - /configmap/stake-distribution-update
+            env:
+            - name: KOIOS_BRANCH
+              value: alpha
+            - name: CNODE_CONFIG_FILE
+              value: /cardano-node-configmap/config.json
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_HOST_RW
+                  name: common-env
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_PORT
+                  name: common-env
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_DB
+                  name: common-env
+            - name: PGUSER
+              valueFrom:
+                configMapKeyRef:
+                  key: POSTGRES_USER
+                  name: common-env
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-password
+                  name: init0-postgresql-ha-postgresql
+            - name: PGRST_DB_SCHEMA
+              value: grest
+            image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+            name: koios-stake-distribution-update
+            volumeMounts:
+            - mountPath: /configmap
+              name: koios-configmap
+            - mountPath: /cardano-node-configmap
+              name: cardano-node-configmap
+          restartPolicy: Never
+          serviceAccountName: koios-deploy-sql
+          volumes:
+          - configMap:
+              name: koios-configmap
+            name: koios-configmap
+          - configMap:
+              name: cardano-node
+            name: cardano-node-configmap
+      ttlSecondsAfterFinished: 1740
+  schedule: '*/30 * * * *'
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: create-db-ro-user
+spec:
+  activeDeadlineSeconds: 600
+  backoffLimit: 5
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        project_name: dandelion
+    spec:
+      containers:
+      - command:
+        - bash
+        - -x
+        - /configmap/create-db-ro-user-entrypoint
+        env:
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        image: bitnami/postgresql-repmgr:11.9.0-debian-10-r10
+        name: create-db-ro-user
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /configmap
+          name: cardano-db-sync-configmap
+      restartPolicy: Never
+      volumes:
+      - configMap:
+          name: cardano-db-sync-configmap
+        name: cardano-db-sync-configmap
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: deploy-koios-sql
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      annotations:
+        note: free-apis!
+      labels:
+        cardano_network: testnet
+        cardano_node_type: haskell
+        environment: production
+        project_name: dandelion
+    spec:
+      containers:
+      - command:
+        - bash
+        - -x
+        - /configmap/koios-deploy-sql-entrypoint
+        env:
+        - name: KOIOS_BRANCH
+          value: alpha
+        - name: CNODE_CONFIG_FILE
+          value: /cardano-node-configmap/config.json
+        - name: PGHOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST_RW
+              name: common-env
+        - name: PGPORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: common-env
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: common-env
+        - name: PGUSER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: common-env
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: postgresql-password
+              name: init0-postgresql-ha-postgresql
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              key: usernames
+              name: init0-postgresql-ha-pgpool-custom-users
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              key: passwords
+              name: init0-postgresql-ha-pgpool-custom-users
+        image: gimbalabs/cardano-db-sync-init-container:1.32.1-0
+        name: deploy-koios-sql
+        volumeMounts:
+        - mountPath: /configmap
+          name: koios-configmap
+        - mountPath: /cardano-node-configmap
+          name: cardano-node-configmap
+      restartPolicy: Never
+      serviceAccountName: koios-deploy-sql
+      volumes:
+      - configMap:
+          name: koios-configmap
+        name: koios-configmap
+      - configMap:
+          name: cardano-node
+        name: cardano-node-configmap
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: cardano-explorer-api
+spec:
+  rules:
+  - host: explorer-api.testnet.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: cardano-explorer-api
+            port:
+              number: 8101
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - explorer-api.testnet.local
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: cardano-graphql-api
+spec:
+  rules:
+  - host: graphql-api.testnet.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: cardano-graphql
+            port:
+              number: 3100
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - graphql-api.testnet.local
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: cardano-submit-api
+spec:
+  rules:
+  - host: submit-api.testnet.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: cardano-submit-api
+            port:
+              number: 8091
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - submit-api.testnet.local
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: chisel-api
+spec:
+  rules:
+  - host: chisel-api.testnet.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: chisel-server
+            port:
+              number: 40000
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - chisel-api.testnet.local
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: koios-api
+spec:
+  rules:
+  - host: koios-api.testnet.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: koios-api
+            port:
+              number: 3000
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - koios-api.testnet.local
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: ogmios-api
+spec:
+  rules:
+  - host: ogmios-api.testnet.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: ogmios
+            port:
+              number: 1337
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - ogmios-api.testnet.local
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: postgrest-api
+spec:
+  rules:
+  - host: postgrest-api.testnet.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: postgrest
+            port:
+              number: 3000
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - postgrest-api.testnet.local
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    note: free-apis!
+  labels:
+    cardano_network: testnet
+    cardano_node_type: haskell
+    environment: production
+    project_name: dandelion
+  name: rosetta-api
+spec:
+  rules:
+  - host: rosetta-api.testnet.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: cardano-rosetta
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - rosetta-api.testnet.local

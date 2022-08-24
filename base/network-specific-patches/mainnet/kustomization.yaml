@@ -35,4 +35,11 @@ patches:
   target:
     kind: StatefulSet
     name: init0-postgresql-ha-postgresql
-
+- path: patches/postgres-dev-shm-mount.yaml
+  target:
+    kind: StatefulSet
+    name: init0-postgresql-ha-postgresql
+- path: patches/postgres-extended-configuration-configmap.yaml
+  target:
+    kind: ConfigMap
+    name: init0-postgresql-ha-postgresql-extended-configuration
