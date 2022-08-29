@@ -15,6 +15,7 @@ bases:
 - ../../base/cardano-rosetta
 - ../../base/cardano-submit-api
 - ../../base/cardano-explorer-api
+- ../../base/cardano-token-registry
 #- ../../base/metrics-exporter
 - ../../base/ogmios
 - ../../base/postgrest
