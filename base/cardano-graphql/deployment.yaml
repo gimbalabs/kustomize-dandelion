@@ -93,6 +93,8 @@ spec:
           value: /opt/cardano/cnode/files/config.json
         - name: HASURA_URI
           value: http://hasura-headless:8080
+        - name: METADATA_SERVER_URI
+          value: http://cardano-token-registry:3042
         - name: OGMIOS_HOST
           value: ogmios
         - name: OGMIOS_PORT
@@ -115,7 +117,7 @@ spec:
           value: /run/secrets/postgres-password/POSTGRES_PASSWORD
         - name: CARDANO_NODE_SOCKET_PATH
           value: /ipc/node.socket
-        image: inputoutput/cardano-graphql:7.0.0-mainnet
+        image: inputoutput/cardano-graphql:7.0.0
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: Always
         name: cardano-graphql
