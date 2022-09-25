@@ -10,7 +10,7 @@ spec:
       containers:
       - name: create-db-ro-user
         command: ["bash", "-x", "/configmap/create-db-ro-user-entrypoint"]
-        image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
+        image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0

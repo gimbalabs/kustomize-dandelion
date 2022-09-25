@@ -18,12 +18,21 @@ spec:
         io.kompose.service: cardano-db-sync
     spec:
       initContainers:
-      - name: configure
-        command: ["bash", "-x", "/configmap/initContainer-entrypoint"]
+      - name: setup-node-config
+        command: ["bash", "/configmap/initContainer-setup-node-config-entrypoint"]
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.3-3
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: cardano-node-config
+          mountPath: /config
+        - name: cardano-db-sync-configmap
+          mountPath: /configmap
+      - name: restore-snapshot
+        command: ["bash", "-x", "/configmap/initContainer-restore-snapshot-entrypoint"]
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0
-        image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
+        image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
         imagePullPolicy: IfNotPresent
         env:
         - name: NETWORK
@@ -39,9 +48,9 @@ spec:
         - name: RESTORE_SNAPSHOT
           value: "true"
         - name: DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI
-          value: "s3://updates-cardano-testnet/cardano-db-sync/12/"
+          value: "s3://updates-cardano-testnet/cardano-db-sync/13/"
         - name: DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI
-          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/12/"
+          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/13/"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -93,6 +102,16 @@ spec:
           value: "true"
         - name: NETWORK
           value: mainnet
+        - name: DISABLE_EPOCH
+          value: "false"
+        - name: DISABLE_CACHE
+          value: "false"
+        - name: DISABLE_LEDGER
+          value: "false"
+        - name: CARDANO_DB_SYNC_STATE_DIR
+          value: /var/lib/cexplorer
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: "/node-ipc/node.socket"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -118,8 +137,9 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
-        image: gimbalabs/cardano-db-sync:11.0.4
-        workingDir: /var/lib/cdbsync
+        image: gimbalabs/cardano-db-sync:13.0.4
+        workingDir: /var/lib/cexplorer
+        command: ["sh", "-x", "/configmap/entrypoint"]
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: IfNotPresent
         resources: {}
@@ -136,9 +156,11 @@ spec:
           mountPath: /run/secrets/postgres-password
           readOnly: true
         - name: dbsync-statedir
-          mountPath: /var/lib/cdbsync
+          mountPath: /var/lib/cexplorer
         - name: cardano-db-sync-configmap
           mountPath: /configmap
+        - name: cardano-node-config
+          mountPath: /opt/cardano/cnode/files
         livenessProbe:
           exec:
             command: ["bash", "/configmap/liveness-healthcheck"]
@@ -164,8 +186,8 @@ spec:
       volumes:
       - name: node-ipc
         emptyDir: {}
-      - name: aux-data-dir
-        
+      - name: cardano-node-config
+        emptyDir: {}
       - name: common-env
         configMap:
           name: common-env

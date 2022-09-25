@@ -1,0 +1,10 @@
+- op: replace
+  path: /spec/volumeClaimTemplates
+  value:
+  - metadata:
+      name: node-db
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 8Gi

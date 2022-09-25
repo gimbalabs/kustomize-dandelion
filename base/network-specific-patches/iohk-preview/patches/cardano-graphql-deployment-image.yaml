@@ -1,0 +1,4 @@
+- op: replace
+  path: /spec/template/spec/containers/0/image
+  value:
+    inputoutput/cardano-graphql:7.0.1

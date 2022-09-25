@@ -1,0 +1,71 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1  # <-- Component notation
+kind: Component
+
+patches:
+# cardano-node
+- path: patches/cardano-node-configmap.yaml
+  target:
+    kind: ConfigMap
+    name: cardano-node
+- path: patches/cardano-node-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
+- path: patches/cardano-node-deployment-env.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
+- path: patches/cardano-node-deployment-initContainers-env.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
+- path: patches/cardano-node-deployment-image.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-node
+# cardano-graphql
+- path: patches/cardano-graphql-genesis-image.yaml
+  target:
+    kind: Deployment
+    name: cardano-graphql
+- path: patches/cardano-graphql-deployment-image.yaml
+  target:
+    kind: Deployment
+    name: cardano-graphql
+# cardano-db-sync
+- path: patches/cardano-db-sync-genesis-image.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+- path: patches/cardano-db-sync-deployment-initContainer-env.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+- path: patches/cardano-db-sync-deployment-image.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+- path: patches/cardano-db-sync-deployment-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: cardano-db-sync
+# cardano-rosetta
+- path: patches/cardano-rosetta-deployment-image.yaml
+  target:
+    kind: Deployment
+    name: cardano-rosetta
+# cardano-submit-api
+- path: patches/cardano-submit-api-genesis-image.yaml
+  target: 
+    kind: Deployment
+    name: cardano-submit-api
+# ogmios
+- path: patches/ogmios-genesis-image.yaml
+  target:
+    kind: Deployment
+    name: ogmios
+# postgres-ha
+- path: patches/postgres-ha-pvc.yaml
+  target:
+    kind: StatefulSet
+    name: init0-postgresql-ha-postgresql

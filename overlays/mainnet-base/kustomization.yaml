@@ -11,4 +11,4 @@ bases:
 - ../../base/cardano-node
 
 components:
-- ../../base/mainnet-patches
+- ../../base/network-specific-patches/mainnet

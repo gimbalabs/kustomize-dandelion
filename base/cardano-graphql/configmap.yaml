@@ -13,10 +13,12 @@ data:
   initContainer-entrypoint: |
     rm -rf /config/lost+found
 
-    cp /opt/cardano/cnode/files/config.json /config/cardano-node-config.json
-    cp /opt/cardano/cnode/files/byron-genesis.json /config/
-    cp /opt/cardano/cnode/files/genesis.json /config/
-    cp /opt/cardano/cnode/files/alonzo-genesis.json /config/
+    CNODE_FILES="config.json byron-genesis.json genesis.json alonzo-genesis.json"
+
+    for file in ${CNODE_FILES}
+    do
+      cp -a /opt/cardano/cnode/files/${file} /config
+    done
 
   initContainer-wait-for-tip: |
 

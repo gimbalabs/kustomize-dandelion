@@ -11,4 +11,4 @@ bases:
 - ../../base/cardano-node
 
 components:
-- ../../base/testnet-patches
+- ../../base/network-specific-patches/iohk-testnet

@@ -1,0 +1,27 @@
+commonLabels:
+  environment: production
+  cardano_network: iohk-preprod
+  cardano_node_type: haskell
+  project_name: dandelion
+commonAnnotations:
+  note: free-apis!
+
+bases:
+- ../iohk-preprod-base
+- ../../base/helm-charts/postgres-ha
+- ../../base/cardano-db-sync
+- ../../base/cardano-graphql
+- ../../base/cardano-hasura
+- ../../base/cardano-rosetta
+- ../../base/cardano-explorer-api
+- ../../base/cardano-submit-api
+#- ../../base/metrics-exporter
+- ../../base/ogmios
+- ../../base/postgrest
+- ../../base/koios
+
+resources:
+- resources/ingress.yaml
+
+components:
+- ../../base/network-specific-patches/iohk-preprod

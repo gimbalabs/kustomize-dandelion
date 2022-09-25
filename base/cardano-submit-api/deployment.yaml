@@ -14,12 +14,25 @@ spec:
       labels:
         io.kompose.service: cardano-submit-api
     spec:
+      initContainers:
+      - name: configure
+        command: ["bash", "/configmap/initContainer-entrypoint"]
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.3-3
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: cardano-submit-api-config
+          mountPath: /config
+        - name: cardano-submit-api-configmap
+          mountPath: /configmap
       containers:
       - name: cardano-submit-api
+        image: inputoutput/cardano-submit-api:1.35.3
+        command: ["sh", "-x", "/configmap/entrypoint"]
         env:
-        - name: NETWORK
-          value: mainnet
-        image: inputoutput/cardano-submit-api:1.33.0
+        - name: CARDANO_SUBMIT_API_CONFIG_PATH
+          value: "/configmap/config.json"
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: "/node-ip/node.socket"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8090
@@ -27,6 +40,10 @@ spec:
         volumeMounts:
         - mountPath: /node-ipc
           name: node-ipc
+        - name: cardano-submit-api-configmap
+          mountPath: /configmap
+        - name: cardano-submit-api-config
+          mountPath: /config
       - name: socat-socket-server
         image: alpine/socat
         env:
@@ -42,4 +59,9 @@ spec:
       serviceAccountName: ""
       volumes:
       - name: node-ipc
+        emptyDir: {}
+      - name: cardano-submit-api-configmap
+        configMap:
+          name: cardano-submit-api-configmap
+      - name: cardano-submit-api-config
         emptyDir: {}

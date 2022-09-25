@@ -1,0 +1,13 @@
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: shm
+    emptyDir:
+      medium: Memory
+      sizeLimit: 32Gi
+
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    mountPath: /dev/shm
+    name: shm

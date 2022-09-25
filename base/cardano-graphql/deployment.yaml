@@ -19,7 +19,7 @@ spec:
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.33.0-0
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.3-3
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: cardano-graphql-config
@@ -28,7 +28,7 @@ spec:
           mountPath: /configmap
       - name: wait-for-tip
         command: ["bash", "-x", "/configmap/initContainer-wait-for-tip"]
-        image: gimbalabs/cardano-db-sync-init-container:1.33.0-0
+        image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
         imagePullPolicy: IfNotPresent
         env:
         - name: CARDANO_NODE_SOCKET_TCP_HOST
@@ -90,9 +90,11 @@ spec:
         - name: LOGGER_MIN_SEVERITY
           value: "info"
         - name: CARDANO_NODE_CONFIG_PATH
-          value: /opt/cardano/cnode/files/cardano-node-config.json
+          value: /opt/cardano/cnode/files/config.json
         - name: HASURA_URI
           value: http://hasura-headless:8080
+        - name: METADATA_SERVER_URI
+          value: http://cardano-token-registry:3042
         - name: OGMIOS_HOST
           value: ogmios
         - name: OGMIOS_PORT
@@ -115,9 +117,9 @@ spec:
           value: /run/secrets/postgres-password/POSTGRES_PASSWORD
         - name: CARDANO_NODE_SOCKET_PATH
           value: /ipc/node.socket
-        image: inputoutput/cardano-graphql:6.2.0-mainnet
+        image: inputoutput/cardano-graphql:7.0.1
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         name: cardano-graphql
         ports:
         - containerPort: 3100

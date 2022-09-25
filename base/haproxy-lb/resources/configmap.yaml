@@ -239,10 +239,10 @@ data:
         acl valid_hosts hdr(host) -m reg -i stats-ian.dandelion.link
 
         # deny examples:
-        #acl denied path_beg,url_dec -i /graphql
-        #acl denied req.body -m reg .*BlockOverView.*
-        #acl denied req.body -m reg .*activeStake_aggregate.*epochNo.*326.*
-        #acl denied hdr(X-Forwarded-For) -m reg -i 52.202.136.115
+        acl denied path_beg,url_dec -i /graphql
+        acl denied req.body -m reg .*BlockOverView.*
+        acl denied req.body -m reg .*activeStake_aggregate.*epochNo.*326.*
+        acl denied hdr(X-Forwarded-For) -m reg -i 52.202.136.115
 
         http-request deny if !valid_hosts
         http-request deny if denied

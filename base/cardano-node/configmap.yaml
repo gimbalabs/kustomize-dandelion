@@ -6,7 +6,6 @@ data:
   initContainer-entrypoint: |
     if [[ ! -e /data/db/lock ]] && [[ "${RESTORE_SNAPSHOT}" == "true" ]]
     then
-      sudo apt update -qq && sudo apt install -y liblz4-tool
       curl -o - https://downloads.csnapshots.io/${NETWORK}/$(curl -s https://downloads.csnapshots.io/${NETWORK}/${NETWORK}-db-snapshot.json | jq -r .[].file_name ) | lz4 -c -d - | tar -x -C ${CNODE_DB_PATH}
     fi
   topology.json.passive: |
