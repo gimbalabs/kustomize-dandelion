@@ -1,0 +1,15 @@
+- op: replace
+  path: /spec/template/spec/containers/0/env
+  value:
+    - name: NETWORK
+      value: iohk-preview
+    - name: CNODE_HOST_ADDR
+      value: 0.0.0.0
+    - name: CARDANO_NODE_SOCKET_PATH
+      value: /ipc/node.socket
+    - name: CNODE_DB_PATH
+      value: /data/db
+    - name: CNODE_TOPOLOGY_FILE
+      value: /configmap/topology.json
+    - name: CNODE_CONFIG_FILE
+      value: /configmap/config.json
