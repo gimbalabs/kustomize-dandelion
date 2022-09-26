@@ -73,3 +73,8 @@ patches:
   target:
     kind: StatefulSet
     name: init0-postgresql-ha-postgresql
+# blockfrost
+- path: patches/blockfrost-deployment-env.yaml
+  target:
+    kind: Deployment
+    name: blockfrost

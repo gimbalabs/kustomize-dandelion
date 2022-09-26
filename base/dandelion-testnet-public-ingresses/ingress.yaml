@@ -189,6 +189,30 @@ spec:
     #secretName: local-tls
 
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-blockfrost-api
+spec:
+  rules:
+    - host: blockfrost-api.testnet.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: blockfrost
+                port:
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - blockfrost-api.testnet.dandelion.link
+    #secretName: local-tls
+
+---
 #apiVersion: networking.k8s.io/v1
 #kind: Ingress
 #metadata:
