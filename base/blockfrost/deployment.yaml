@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: blockfrost
+  name: blockfrost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: blockfrost
+  template:
+    metadata:
+      labels:
+        io.kompose.service: blockfrost
+    spec:
+      containers:
+      - name: blockfrost
+        image: gimbalabs/blockfrost-ryo:1.0.1
+        imagePullPolicy: IfNotPresent
+        resources: {}
+        env:
+        - name: BLOCKFROST_CONFIG_NETWORK
+          value: mainnet
+        - name: BLOCKFROST_CONFIG_DBSYNC_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST_RW
+        - name: BLOCKFROST_CONFIG_DBSYNC_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_DB
+        - name: BLOCKFROST_CONFIG_DBSYNC_USER
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
+        - name: BLOCKFROST_CONFIG_SERVER_PROMETHEUS_METRICS
+          value: "true"
+        - name: BLOCKFROST_CONFIG_TOKEN_REGISTRY_URL
+          value: http://cardano-token-registry:3042
+        - name: BLOCKFROST_CONFIG_SERVER_LISTEN_ADDRESS
+          value: "0.0.0.0"
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: common-env
+          mountPath: /run/secrets/common-env
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 3
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - name: common-env
+        configMap:
+          name: common-env
