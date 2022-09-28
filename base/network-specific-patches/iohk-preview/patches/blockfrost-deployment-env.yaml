@@ -1,0 +1,31 @@
+- op: replace
+  path: /spec/template/spec/containers/0/env
+  value:
+    - name: BLOCKFROST_CONFIG_NETWORK
+      value: preview
+    - name: BLOCKFROST_CONFIG_DBSYNC_HOST
+      valueFrom:
+        configMapKeyRef:
+          name: common-env
+          key: POSTGRES_HOST_RW
+    - name: BLOCKFROST_CONFIG_DBSYNC_DATABASE
+      valueFrom:
+        configMapKeyRef:
+          name: common-env
+          key: POSTGRES_DB
+    - name: BLOCKFROST_CONFIG_DBSYNC_USER
+      valueFrom:
+        secretKeyRef:
+          name: init0-postgresql-ha-pgpool-custom-users
+          key: usernames
+    - name: PGPASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: init0-postgresql-ha-pgpool-custom-users
+          key: passwords
+    - name: BLOCKFROST_CONFIG_SERVER_PROMETHEUS_METRICS
+      value: "true"
+    - name: BLOCKFROST_CONFIG_TOKEN_REGISTRY_URL
+      value: http://cardano-token-registry:3042
+    - name: BLOCKFROST_CONFIG_SERVER_LISTEN_ADDRESS
+      value: "0.0.0.0"

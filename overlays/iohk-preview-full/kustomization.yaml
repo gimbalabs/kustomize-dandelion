@@ -19,6 +19,7 @@ bases:
 - ../../base/ogmios
 - ../../base/postgrest
 - ../../base/koios
+- ../../base/blockfrost
 
 resources:
 - resources/ingress.yaml
