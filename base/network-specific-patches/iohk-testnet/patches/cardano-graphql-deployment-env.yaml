@@ -1,0 +1,35 @@
+- op: replace
+  path: /spec/template/spec/containers/0/env
+  value:
+    - name: ALLOW_INTROSPECTION
+      value: "true"
+    - name: CACHE_ENABLED
+      value: "true"
+    - name: LOGGER_MIN_SEVERITY
+      value: "info"
+    - name: CARDANO_NODE_CONFIG_PATH
+      value: /opt/cardano/cnode/files/config.json
+    - name: HASURA_URI
+      value: http://hasura-headless:8080
+    - name: OGMIOS_HOST
+      value: ogmios
+    - name: OGMIOS_PORT
+      value: "1337"
+    - name: POSTGRES_HOST
+      valueFrom:
+        configMapKeyRef:
+          name: common-env
+          key: POSTGRES_HOST_RW
+    - name: POSTGRES_PORT
+      valueFrom:
+        configMapKeyRef:
+          name: common-env
+          key: POSTGRES_PORT
+    - name: POSTGRES_DB_FILE
+      value: /run/secrets/common-env/POSTGRES_DB
+    - name: POSTGRES_USER_FILE
+      value: /run/secrets/common-env/POSTGRES_USER
+    - name: POSTGRES_PASSWORD_FILE
+      value: /run/secrets/postgres-password/POSTGRES_PASSWORD
+    - name: CARDANO_NODE_SOCKET_PATH
+      value: /ipc/node.socket

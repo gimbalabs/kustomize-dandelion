@@ -28,6 +28,10 @@ patches:
   target:
     kind: Deployment
     name: cardano-graphql
+- path: patches/cardano-graphql-deployment-env.yaml
+  target:
+    kind: Deployment
+    name: cardano-graphql
 - path: patches/cardano-graphql-deployment-image.yaml
   target:
     kind: Deployment
