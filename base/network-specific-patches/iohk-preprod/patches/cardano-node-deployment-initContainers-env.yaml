@@ -2,7 +2,7 @@
   path: /spec/template/spec/initContainers/1/env
   value:
     - name: RESTORE_SNAPSHOT
-      value: "true"
+      value: "false"
     - name: NETWORK
       value: testnet
     - name: CNODE_DB_PATH
