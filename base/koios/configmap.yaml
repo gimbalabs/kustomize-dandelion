@@ -95,6 +95,7 @@ data:
       touch /tmp/.pgpass && export PGPASSFILE=/tmp/.pgpass
       export CONFIG=${CNODE_CONFIG_FILE}
       export BRANCH=${KOIOS_BRANCH}
+      export G_ACCOUNT=cardano-community
       export URL_RAW="https://raw.githubusercontent.com/cardano-community/guild-operators/${BRANCH}"
       export DB_SCRIPTS_URL="${URL_RAW}/scripts/grest-helper-scripts/db-scripts"
 
