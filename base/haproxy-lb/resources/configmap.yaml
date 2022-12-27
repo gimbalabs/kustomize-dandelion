@@ -8,15 +8,15 @@ data:
   topology-mainnet.json: |  
     {
       "Providers": [
-          { "name": "PEACE-uk",     "addr": "dedi0.uk.br.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-fr",     "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",          "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
-          { "name": "RSV-2",        "addr": "dandelion2.reservoir.network", "port": 5001, "protocol": "https" },
-          { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
-          { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
-          { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+          { "name": "PEACE-es",       "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",       "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "GAMECHANGER-cl", "addr": "200.14.81.219", "port": 443, "protocol": "https" },
+          { "name": "EASY1",          "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "RSV",            "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV-2",          "addr": "dandelion2.reservoir.network", "port": 5001, "protocol": "https" },
+          { "name": "BOOST",          "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
+          { "name": "FLUID7",         "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
+          { "name": "saldrich",       "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
       ],
       "Consumers": []
     }
@@ -24,15 +24,45 @@ data:
   topology-testnet.json: |
     {
       "Providers": [
-          { "name": "PEACE-uk",     "addr": "dedi0.uk.br.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-es",     "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "PEACE-fr",     "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "EASY1",        "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",          "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
-          { "name": "RSV-2",        "addr": "dandelion2.reservoir.network", "port": 443, "protocol": "https" },
-          { "name": "BOOST",        "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
-          { "name": "FLUID7",       "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
-          { "name": "saldrich",     "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+          { "name": "PEACE-es",       "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",       "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "GAMECHANGER-cl", "addr": "200.14.81.219", "port": 443, "protocol": "https" },
+          { "name": "EASY1",          "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "RSV",            "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV-2",          "addr": "dandelion2.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "BOOST",          "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
+          { "name": "FLUID7",         "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
+          { "name": "saldrich",       "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+      ],
+      "Consumers": []
+    }
+  topology-iohk-preprod.json: |
+    {
+      "Providers": [
+          { "name": "PEACE-es",       "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",       "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "GAMECHANGER-cl", "addr": "200.14.81.219", "port": 443, "protocol": "https" },
+          { "name": "EASY1",          "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "RSV",            "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV-2",          "addr": "dandelion2.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "BOOST",          "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
+          { "name": "FLUID7",         "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
+          { "name": "saldrich",       "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
+      ],
+      "Consumers": []
+    }
+  topology-iohk-preview.json: |
+    {
+      "Providers": [
+          { "name": "PEACE-es",       "addr": "soltia.es.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "PEACE-fr",       "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "GAMECHANGER-cl", "addr": "200.14.81.219", "port": 443, "protocol": "https" },
+          { "name": "EASY1",          "addr": "gio.dandelion.link", "port": 443, "protocol": "https" },
+          { "name": "RSV",            "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "RSV-2",          "addr": "dandelion2.reservoir.network", "port": 443, "protocol": "https" },
+          { "name": "BOOST",          "addr": "baremetal.cardano.dbooster.io", "port": 443, "protocol": "https" },
+          { "name": "FLUID7",         "addr": "dandelion.fluid7.com", "port": 443, "protocol": "https" },
+          { "name": "saldrich",       "addr": "dandelionflorida.ddns.net", "port": 443, "protocol": "https" }
       ],
       "Consumers": []
     }
