@@ -67,7 +67,7 @@ Before directly rendering an overlay, you might want to enable/disable some comp
 You need to execute this from the top dir of this git repository:
  
 ``` 
-OVERLAY=testnet-full
+OVERLAY=iohk-preprod-full
 OUTPUT_FILE=overlays/${OVERLAY}/output.yaml # this will contain the whole deploy manifest
 kustomize build \
   --enable-helm \
@@ -80,14 +80,14 @@ You need to execute one of these options from the top dir of this git repository
 
 * A) Using plain `kubectl`:
 ```
-NAMESPACE=dandelion-testnet
-OVERLAY=testnet-full
+NAMESPACE=dandelion-iohk-preprod
+OVERLAY=iohk-preprod-full
 kubectl get ns ${NAMESPACE} || kubectl create ns ${NAMESPACE}
 kubectl apply --validate=false -n ${NAMESPACE} -f overlays/${OVERLAY}/output.yaml
 ```
 * B) Using convenient [kapp] tool to get diff between local manifests and currently deployed ones in cluster:
 ```
-OVERLAY=testnet-full
+OVERLAY=iohk-preprod-full
 NAMESPACE=dandelion-${OVERLAY}
 APP_NAME=${NAMESPACE}
 kubectl get ns ${NAMESPACE} || kubectl create ns ${NAMESPACE}
@@ -103,7 +103,7 @@ Execute this from the top dir of this git repository:
 
 * Deploy testnet ingresses:
 ```
-NETWORK=testnet
+NETWORK=iohk-preprod
 NAMESPACE=dandelion-${NETWORK}
 kubectl apply -n ${NAMESPACE} -f base/dandelion-${NETWORK}-public-ingresses/ingress.yaml
 ```
@@ -135,18 +135,18 @@ If you prefer, you could fake these hostnames to point to `127.0.0.1` on your `/
 
 * Get available endpoints:
 ```
-NAMESPACE=dandelion-testnet
+NAMESPACE=dandelion-iohk-preprod
 kubectl get ingress -n ${NAMESPACE}
 ```
 * Check postgres[t] db tables
 ```
-ENDPOINT=postgrest-api.testnet.local
+ENDPOINT=postgrest-api.iohk-preprod.local
 curl -kL -H "Host: ${ENDPOINT}" \
   https://localhost
 ```
 * Check sync progress
 ```
-ENDPOINT=graphql-api.testnet.local
+ENDPOINT=graphql-api.iohk-preprod.local
 curl -kL \
      -H "Host: ${ENDPOINT}" \
      -H 'Accept-Encoding: gzip, deflate, br' \
@@ -162,7 +162,7 @@ curl -kL \
 
 If you want to explore the db from outside the cluster (GUI tools, et al), you can expose postgres port locally:
 ```
-NAMESPACE=dandelion-testnet
+NAMESPACE=dandelion-iohk-preprod
 # get read-only user/pass
 PGUSER=$(kubectl get secret/init0-postgresql-ha-pgpool-custom-users \
   -n ${NAMESPACE} \
@@ -173,19 +173,19 @@ PGPASSWORD=$(kubectl get secret/init0-postgresql-ha-pgpool-custom-users \
 
 echo "User: ${PGUSER} Pass: ${PGPASSWORD}"
 # expose port
-kubectl port-forward -n dandelion-testnet init0-postgresql-ha-postgresql-0 5432:5432
+kubectl port-forward -n dandelion-iohk-preprod init0-postgresql-ha-postgresql-0 5432:5432
 ```
 
 ## Start from the scratch:
 
 * Destroy namespace
 ```
-NAMESPACE=dandelion-testnet
+NAMESPACE=dandelion-iohk-preprod
 kubectl delete ns ${NAMESPACE}
 ```
 * Or even destroy the whole cluster
 ```
-CLUSTER_NAME=dandelion-testnet
+CLUSTER_NAME=dandelion-iohk-preprod
 k3d cluster delete  ${CLUSTER_NAME}
 ```
 * Just [deploy again :)](#deploy-k8s-manifests)
@@ -193,7 +193,7 @@ k3d cluster delete  ${CLUSTER_NAME}
 ## Resync db only
 
 ```
-NAMESPACE=dandelion-testnet
+NAMESPACE=dandelion-iohk-preprod
 
 kubectl scale statefulset -n ${NAMESPACE} \
   --replicas=0 \
