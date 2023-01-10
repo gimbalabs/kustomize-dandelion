@@ -309,7 +309,6 @@ spec:
         {{- if .Values.dandelion.ingressAlternativeDomain }}
         - "postgresws-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
         {{- end }}
-{{ end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -334,4 +333,4 @@ spec:
         {{- if .Values.dandelion.ingressAlternativeDomain }}
         - "blockfrost-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
         {{- end }}
-  {{ end }}
+{{ end }}
