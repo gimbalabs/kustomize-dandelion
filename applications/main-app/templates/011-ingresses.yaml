@@ -309,28 +309,4 @@ spec:
         {{- if .Values.dandelion.ingressAlternativeDomain }}
         - "postgresws-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
         {{- end }}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: blockfrost-api
-  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
-spec:
-  - host: blockfrost-api.mainnet.dandelion.link
-    http:
-      paths:
-        - backend:
-            service:
-              name: blockfrost
-              port:
-                number: 3000
-          path: /
-          pathType: Prefix
-  # This section is only required if TLS is to be enabled for the Ingress
-  tls:
-    - hosts:
-        - "blockfrost-api.{{ .Values.dandelion.ingressBaseDomain }}"
-        {{- if .Values.dandelion.ingressAlternativeDomain }}
-        - "blockfrost-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
-        {{- end }}
 {{ end }}
