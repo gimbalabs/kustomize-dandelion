@@ -29,6 +29,14 @@ spec:
           repmgrUsername: repmgruser
           repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
           repmgrDatabase: repmgrdatabase
+          extraVolumes:
+          - name: shm
+            emptyDir:
+              medium: Memory
+              sizeLimit: 24Gi
+          extraVolumeMounts:
+          - name: shm
+            mountPath: /dev/shm
         pgpool:
           customUsers:
             usernames: 'dandelion_ro'
