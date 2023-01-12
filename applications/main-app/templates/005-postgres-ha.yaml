@@ -29,21 +29,6 @@ spec:
           repmgrUsername: repmgruser
           repmgrPassword: {{ .Values.dandelion.db.repmgrPassword | default "repmgrpassword" }}
           repmgrDatabase: repmgrdatabase
-          {{- if .Values.dandelion.multiNode }}
-          affinity:
-            nodeAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                nodeSelectorTerms:
-                - matchExpressions:
-                  - key: k8s.dandelion.link/role
-                    operator: In
-                    values:
-                    - db-main
-                  - key: k8s.dandelion.link/cardano-network
-                    operator: In
-                    values:
-                    - mainnet
-          {{- end }}
         pgpool:
           customUsers:
             usernames: 'dandelion_ro'
