@@ -1,0 +1,239 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-cardano-explorer-api
+spec:
+  rules:
+    - host: explorer-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-explorer-api
+                port: 
+                  number: 8101
+            path: /
+            pathType: Prefix
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - explorer-api.iohk-preview.dandelion.link
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-cardano-submit-api
+spec:
+  rules:
+    - host: submit-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-submit-api
+                port: 
+                  number: 8091
+            path: /
+            pathType: Prefix
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - submit-api.iohk-preview.dandelion.link
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-cardano-graphql-api
+spec:
+  rules:
+    - host: graphql-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-graphql
+                port: 
+                  number: 3100
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - graphql-api.iohk-preview.dandelion.link
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-chisel-api
+spec:
+  rules:
+    - host: chisel-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: chisel-server
+                port: 
+                  number: 40000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - chisel-api.iohk-preview.dandelion.link
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-ogmios-api
+spec:
+  rules:
+    - host: ogmios-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: ogmios
+                port: 
+                  number: 1337
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - ogmios-api.iohk-preview.dandelion.link
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-postgrest-api
+spec:
+  rules:
+    - host: postgrest-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: postgrest
+                port: 
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - postgrest-api.iohk-preview.dandelion.link
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-koios-api
+spec:
+  rules:
+    - host: koios-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: koios-api
+                port: 
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - koios-api.iohk-preview.dandelion.link
+    #secretName: dandelion.link-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-rosetta-api
+spec:
+  rules:
+    - host: rosetta-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-rosetta
+                port: 
+                  number: 8080
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - rosetta-api.iohk-preview.dandelion.link
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-blockfrost-api
+spec:
+  rules:
+    - host: blockfrost-api.iohk-preview.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: blockfrost
+                port:
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - blockfrost-api.iohk-preview.dandelion.link
+    #secretName: local-tls
+
+---
+#apiVersion: networking.k8s.io/v1
+#kind: Ingress
+#metadata:
+#  name: public-postgresws-api
+#spec:
+#  rules:
+#    - host: postgresws-api.iohk-preview.dandelion.link
+#      http:
+#        paths:
+#          - backend:
+#              service:
+#                name: postgres-ws
+#                port: 
+#                  number: 3000
+#            path: /
+#            pathType: Prefix
+#
+#  # This section is only required if TLS is to be enabled for the Ingress
+#  tls:
+#  - hosts:
+#    - postgresws-api.iohk-preview.dandelion.link
+#    #secretName: local-tls
+#cardano-node-headless                     ClusterIP   None            <none>        30000/TCP   20h
+#hasura-headless                           ClusterIP   None            <none>        8080/TCP    20h
