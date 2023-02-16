@@ -26,7 +26,7 @@
           }
         }
       ],
-      "useLedgerAfterSlot": 4642000
+      "useLedgerAfterSlot": 322000
     }
 
 - op: add
@@ -51,6 +51,12 @@
       "TargetNumberOfEstablishedPeers": 50,
       "TargetNumberOfKnownPeers": 100,
       "TargetNumberOfRootPeers": 100,
+      "TestAllegraHardForkAtEpoch": 0,
+      "TestAlonzoHardForkAtEpoch": 0,
+      "TestEnableDevelopmentHardForkEras": true,
+      "TestEnableDevelopmentNetworkProtocols": true,
+      "TestMaryHardForkAtEpoch": 0,
+      "TestShelleyHardForkAtEpoch": 0,
       "TraceAcceptPolicy": true,
       "TraceBlockFetchClient": false,
       "TraceBlockFetchDecisions": false,

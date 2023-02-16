@@ -129,7 +129,7 @@ postgresql:
   serviceAnnotations: {}
   ## @param postgresql.replicaCount Number of replicas to deploy. Use an odd number. Having 3 replicas is the minimum to get quorum when promoting a new primary.
   ##
-  replicaCount: 3
+  replicaCount: 1
   ## @param postgresql.updateStrategy.type Postgresql statefulset strategy type
   ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
   ## e.g:
