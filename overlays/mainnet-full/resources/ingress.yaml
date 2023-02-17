@@ -212,3 +212,26 @@ spec:
     - rosetta-api.mainnet.local
     #secretName: local-tls
 
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kupo-api
+spec:
+  rules:
+    - host: kupo-api.iohk-mainnet.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: kupo
+                port:
+                  number: 1442
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - kupo-api.iohk-mainnet.local
+    #secretName: local-tls

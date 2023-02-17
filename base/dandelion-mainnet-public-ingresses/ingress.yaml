@@ -236,27 +236,28 @@ spec:
     #secretName: local-tls
 
 ---
-#apiVersion: networking.k8s.io/v1
-#kind: Ingress
-#metadata:
-#  name: public-postgresws-api
-#spec:
-#  rules:
-#    - host: postgresws-api.mainnet.dandelion.link
-#      http:
-#        paths:
-#          - backend:
-#              service:
-#                name: postgres-ws
-#                port: 
-#                  number: 3000
-#            path: /
-#            pathType: Prefix
-#
-#  # This section is only required if TLS is to be enabled for the Ingress
-#  tls:
-#  - hosts:
-#    - postgresws-api.mainnet.dandelion.link
-#    #secretName: local-tls
-#cardano-node-headless                     ClusterIP   None            <none>        30000/TCP   20h
-#hasura-headless                           ClusterIP   None            <none>        8080/TCP    20h
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: public-kupo-api
+spec:
+  rules:
+    - host: kupo-api.mainnet.dandelion.link
+      http:
+        paths:
+          - backend:
+              service:
+                name: kupo
+                port:
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - kupo-api.mainnet.dandelion.link
+    #secretName: local-tls
+
+---
