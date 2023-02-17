@@ -71,6 +71,10 @@ data:
     option external-check
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
     external-check command /configmap/rosetta-api-hc.sh
+  blockfrost-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/blockfrost-api-hc.sh
   cardano-token-registry-api-healthcheck.tpl: |
     option httpchk
     http-check send meth GET uri / ver HTTP/1.1 hdr host ${INGRESS_DOMAIN}
@@ -139,6 +143,17 @@ data:
     HEALTHCHECK_TIMEOUT=5
 
     timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q message.*Route.GET.*404 || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+
+  blockfrost-api-hc.sh: |
+    #!/usr/bin/env bash
+
+    HC_PID=$$
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|blockfrost|postgrest|g') bash /configmap/drift-hc.sh
+    if [ $? -ne 0 ]; then exit 1; fi
+    HEALTHCHECK_TIMEOUT=5
+
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q is_healthy.*true || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
 
   submit-api-hc.sh: |
     #!/usr/bin/env bash
@@ -324,7 +339,10 @@ data:
         balance static-rr
         retry-on ${HAPROXY_BACKEND_RETRY_ON:-all-retryable-errors}
 
-        $(envsubst < ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl)
+        if -e [ ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl ]
+        then
+          $(envsubst < ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl)
+        fi
     
         cookie network insert
         http-request set-header X-Client-IP %[src]
