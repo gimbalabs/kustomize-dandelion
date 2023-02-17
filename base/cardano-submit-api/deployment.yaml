@@ -32,7 +32,7 @@ spec:
         - name: CARDANO_SUBMIT_API_CONFIG_PATH
           value: "/configmap/config.json"
         - name: CARDANO_NODE_SOCKET_PATH
-          value: "/node-ip/node.socket"
+          value: "/node-ipc/node.socket"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8090
