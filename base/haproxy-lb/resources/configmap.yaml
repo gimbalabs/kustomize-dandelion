@@ -339,10 +339,7 @@ data:
         balance static-rr
         retry-on ${HAPROXY_BACKEND_RETRY_ON:-all-retryable-errors}
 
-        if -e [ ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl ]
-        then
-          $(envsubst < ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl)
-        fi
+        $(envsubst < ${HEALTHCHECKS_TEMPLATE_DIR}/${api}-healthcheck.tpl)
     
         cookie network insert
         http-request set-header X-Client-IP %[src]
