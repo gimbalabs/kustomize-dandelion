@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kupo-configmap
+data:
+  initContainer-entrypoint: |
+    rm -rf /config/lost+found
+
+    CNODE_FILES="config.json byron-genesis.json genesis.json alonzo-genesis.json"
+
+    for file in ${CNODE_FILES}
+    do
+      cp -a /opt/cardano/cnode/files/${file} /config
+    done
+  entrypoint: |
+    kupo \
+      --host 0.0.0.0 \
+      --port ${KUPO_PORT} \
+      --node-socket ${CARDANO_NODE_SOCKET_PATH} \
+      --node-config ${CARDANO_NODE_CONFIG_PATH} \
+      --since origin \
+      --defer-db-indexes \
+      --workdir ${KUPO_DB_PATH} \
+      --match '*/*'

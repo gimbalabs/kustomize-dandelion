@@ -68,6 +68,11 @@ patches:
   target:
     kind: Deployment
     name: ogmios
+# kupo
+- path: patches/kupo-genesis-image.yaml
+  target:
+    kind: StatefulSet
+    name: kupo
 # postgres-ha
 - path: patches/postgres-ha-pvc.yaml
   target:

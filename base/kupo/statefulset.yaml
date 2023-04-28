@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    io.kompose.service: kupo
+  name: kupo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: kupo
+  serviceName: kupo
+  updateStrategy:
+    type: OnDelete
+  template:
+    metadata:
+      labels:
+        io.kompose.service: kupo
+    spec:
+      initContainers:
+      - name: configure
+        command: ["bash", "/configmap/initContainer-entrypoint"]
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.5-2
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: kupo-config
+          mountPath: /config
+        - name: kupo-configmap
+          mountPath: /configmap
+      containers:
+      - name: kupo
+        image: cardanosolutions/kupo
+        command: ["sh", "-x", "/configmap/entrypoint"]
+        env:
+        - name: CARDANO_NODE_CONFIG_PATH
+          value: "/opt/cardano/cnode/files/config.json"
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: "/node-ipc/node.socket"
+        - name: KUPO_DB_PATH
+          value: "/db"
+        - name: KUPO_PORT
+          value: "1442"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 1442
+        resources: {}
+        volumeMounts:
+        - name: kupo-config
+          mountPath: /opt/cardano/cnode/files
+        - mountPath: /node-ipc
+          name: node-ipc
+        - name: kupo-configmap
+          mountPath: /configmap
+        - name: kupo-config
+          mountPath: /config
+        - name: kupo-db
+          mountPath: /db
+      - name: socat-socket-server
+        image: alpine/socat
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: "cardano-node-headless"
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        command: ["sh", "-c", "rm -f /ipc/node.socket; socat UNIX-LISTEN:/ipc/node.socket,fork TCP:${CARDANO_NODE_SOCKET_TCP_HOST}:${CARDANO_NODE_SOCKET_TCP_PORT},ignoreeof"]
+        volumeMounts:
+        - mountPath: /ipc
+          name: node-ipc
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - name: kupo-db
+        persistentVolumeClaim:
+          claimName: kupo-db
+      - name: node-ipc
+        emptyDir: {}
+      - name: kupo-configmap
+        configMap:
+          name: kupo-configmap
+      - name: kupo-config
+        emptyDir: {}
+
+  volumeClaimTemplates:
+  - metadata:
+      name: kupo-db
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 20Gi

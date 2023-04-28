@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    io.kompose.service: kupo
+  name: kupo
+spec:
+  ports:
+  - name: "1442"
+    port: 1442
+    targetPort: 1442
+  selector:
+    io.kompose.service: kupo
+status:
+  loadBalancer: {}
