@@ -538,7 +538,9 @@ postgresql:
   ##   max_locks_per_transaction = 64
   ##   ...
   ##
-  extendedConf: ""
+  #extendedConf: ""
+  extendedConf: |-
+    max_locks_per_transaction = 256
   ## @param postgresql.extendedConfCM ConfigMap with PostgreSQL extended configuration
   ## NOTE: This will override postgresql.extendedConf and implies `volumePermissions.enabled`
   ##
