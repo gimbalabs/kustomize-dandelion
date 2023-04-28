@@ -250,7 +250,7 @@ spec:
               service:
                 name: kupo
                 port:
-                  number: 3000
+                  number: 1442
             path: /
             pathType: Prefix
 
