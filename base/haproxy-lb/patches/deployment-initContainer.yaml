@@ -15,9 +15,9 @@
         - name: CARDANO_MAX_TIP_DRIFT
           value: "600"
         - name: NETWORKS
-          value: "mainnet testnet iohk-preprod iohk-preview"
+          value: "mainnet iohk-preprod iohk-preview"
         - name: APIS
-          value: "graphql-api submit-api explorer-api ogmios-api postgrest-api rosetta-api koios-api cardano-token-registry-api blockfrost-api"
+          value: "graphql-api submit-api explorer-api ogmios-api postgrest-api rosetta-api koios-api cardano-token-registry-api blockfrost-api kupo-api"
         - name: HEALTHCHECKS_TEMPLATE_DIR
           value: "/configmap"
         - name: TOPOLOGY_DIR

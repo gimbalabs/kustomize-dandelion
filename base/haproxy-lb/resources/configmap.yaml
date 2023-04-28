@@ -5,7 +5,7 @@ metadata:
 data:
   topology-disabled: |
           { "name": "TICKR",        "addr": "localhost", "port": 443, "protocol": "https" },
-  topology-mainnet.json: |  
+  topology-iohk-preprod.json: |  
     {
       "Providers": [
           { "name": "PEACE-es",       "addr": "rathole-service.rathole.svc.cluster.local", "port": 4430, "protocol": "https" },
@@ -27,14 +27,6 @@ data:
           { "name": "PEACE-es",       "addr": "rathole-service.rathole.svc.cluster.local", "port": 4431, "protocol": "https" },
           { "name": "PEACE-fr",       "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "GAMECHANGER",    "addr": "em1.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",            "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" }
-      ],
-      "Consumers": []
-    }
-  topology-testnet.json: |
-    {
-      "Providers": [
-          { "name": "PEACE-fr",       "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
           { "name": "RSV",            "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" }
       ],
       "Consumers": []
@@ -153,7 +145,7 @@ data:
     if [ $? -ne 0 ]; then exit 1; fi
     HEALTHCHECK_TIMEOUT=5
 
-    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/" | grep -q is_healthy.*true || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/health" | grep -q is_healthy.*true || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}): bad response (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
 
   submit-api-hc.sh: |
     #!/usr/bin/env bash
