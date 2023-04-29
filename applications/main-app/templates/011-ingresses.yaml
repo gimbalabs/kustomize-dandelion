@@ -347,4 +347,41 @@ spec:
         {{- if .Values.dandelion.ingressAlternativeDomain }}
         - "blockfrost-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
         {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kupo-api
+  namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
+spec:
+  rules:
+    - host: "kupo.{{ .Values.dandelion.ingressBaseDomain }}"
+      http:
+        paths:
+          - backend:
+              service:
+                name: kupo
+                port:
+                  number: 1442
+            path: /
+            pathType: Prefix
+    {{- if .Values.dandelion.ingressAlternativeDomain }}
+    - host: "kupo.{{ .Values.dandelion.ingressAlternativeDomain }}"
+      http:
+        paths:
+          - backend:
+              service:
+                name: kupo
+                port:
+                  number: 1442
+            path: /
+            pathType: Prefix
+    {{- end }}
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+    - hosts:
+        - "blockfrost-api.{{ .Values.dandelion.ingressBaseDomain }}"
+        {{- if .Values.dandelion.ingressAlternativeDomain }}
+        - "blockfrost-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        {{- end }}
 {{ end }}
