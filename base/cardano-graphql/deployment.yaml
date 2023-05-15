@@ -128,9 +128,14 @@ spec:
           successThreshold: 1
           exec:
             command: ["bash", "/configmap/liveness-healthcheck"]
-          initialDelaySeconds: 3600
-          periodSeconds: 20
+          periodSeconds: 60
           timeoutSeconds: 10
+        startupProbe:
+          failureThreshold: 18
+          exec:
+            command: ["bash", "/configmap/liveness-healthcheck"]
+          initialDelaySeconds: 600
+          periodSeconds: 600
         resources: {}
         volumeMounts:
         - name: cardano-graphql-config
