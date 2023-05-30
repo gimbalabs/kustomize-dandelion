@@ -20,6 +20,7 @@ bases:
 - ../../base/postgrest
 - ../../base/koios
 - ../../base/blockfrost
+- ../../base/kupo
 
 resources:
 - resources/ingress.yaml

@@ -10,24 +10,22 @@ data:
       "Providers": [
           { "name": "PEACE-es",       "addr": "rathole-service.rathole.svc.cluster.local", "port": 4430, "protocol": "https" },
           { "name": "PEACE-fr",       "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "GAMECHANGER",    "addr": "200.14.81.219", "port": 443, "protocol": "https" }
+          { "name": "GAMECHANGER",    "addr": "rathole-service.rathole.svc.cluster.local", "port": 4431, "protocol": "https" }
       ],
       "Consumers": []
     }
   topology-iohk-preview.json: |
     {
       "Providers": [
-          { "name": "PEACE-es",       "addr": "rathole-service.rathole.svc.cluster.local", "port": 4430, "protocol": "https" }
+          { "name": "GAMECHANGER",    "addr": "rathole-service.rathole.svc.cluster.local", "port": 4431, "protocol": "https" }
       ],
       "Consumers": []
     }
   topology-mainnet.json: |
     {
       "Providers": [
-          { "name": "PEACE-es",       "addr": "rathole-service.rathole.svc.cluster.local", "port": 4431, "protocol": "https" },
           { "name": "PEACE-fr",       "addr": "em0.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "GAMECHANGER",    "addr": "em1.fr.scw.dandelion.link", "port": 443, "protocol": "https" },
-          { "name": "RSV",            "addr": "dandelion.reservoir.network", "port": 443, "protocol": "https" }
+          { "name": "GAMECHANGER",    "addr": "rathole-service.rathole.svc.cluster.local", "port": 4431, "protocol": "https" }
       ],
       "Consumers": []
     }
@@ -51,6 +49,10 @@ data:
     option external-check
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
     external-check command /configmap/ogmios-hc.sh
+  kupo-api-healthcheck.tpl: |
+    option external-check
+    external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
+    external-check command /configmap/kupo-api-hc.sh
   postgrest-api-healthcheck.tpl: |
     option external-check
     external-check path "/usr/bin:/bin:/tmp:/sbin:/usr/sbin"
@@ -125,6 +127,7 @@ data:
     HEALTHCHECK_TIMEOUT=5
 
     timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/epoch?limit=1" | grep -q out_sum || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}: no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
+
   rosetta-api-hc.sh: |
     #!/usr/bin/env bash
 
@@ -204,6 +207,16 @@ data:
       exit 2
     fi
 
+  kupo-api-hc.sh: |
+    #!/usr/bin/env bash
+
+    HC_PID=$$
+    export HOST_HEADER=$(echo $HAPROXY_PROXY_NAME | sed 's|^d.||g')
+    HAPROXY_PROXY_NAME=$(echo $HAPROXY_PROXY_NAME | sed 's|kupo|postgrest|g') bash /configmap/drift-hc.sh
+    if [ $? -ne 0 ]; then exit 1; fi
+    HEALTHCHECK_TIMEOUT=5
+
+    timeout ${HEALTHCHECK_TIMEOUT} curl -s -k -H "Host: ${HOST_HEADER}" "https://${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}/health" | grep -q kupo_most_recent_node_tip || ( echo "[ERROR][${HC_PID}] (${HOST_HEADER}: no tip received (server: ${HAPROXY_SERVER_ADDR}:${HAPROXY_SERVER_PORT}, timeout: ${HEALTHCHECK_TIMEOUT})" && exit 2 )
 
   api-config.json: |
     {
@@ -322,7 +335,7 @@ data:
           else
             CHECK="check ${HAPROXY_CHECK_INTERVAL}"
           fi
-          echo "    server ${PROVIDER_NAME}    ${PROVIDER_HOST}:${PROVIDER_PORT} ${CHECK} maxconn ${HAPROXY_MAXCONN_PER_BACKEND} cookie core init-addr none resolvers resolvconf"
+          echo "    server ${PROVIDER_NAME}    ${PROVIDER_HOST}:${PROVIDER_PORT} ${CHECK} maxconn ${HAPROXY_MAXCONN_PER_BACKEND} cookie core init-addr none resolvers resolvconf resolve-opts allow-dup-ip"
         done > /tmp/${FQDN}.backends.haproxy.cfg 
       
         cat > /tmp/${FQDN}.haproxy.cfg <<EOF

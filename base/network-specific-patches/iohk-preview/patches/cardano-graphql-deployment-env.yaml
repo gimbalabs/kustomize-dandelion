@@ -7,8 +7,6 @@
       value: "true"
     - name: LOGGER_MIN_SEVERITY
       value: "info"
-    - name: CARDANO_NODE_CONFIG_PATH
-      value: /opt/cardano/cnode/files/config.json
     - name: HASURA_URI
       value: http://hasura-headless:8080
     - name: OGMIOS_HOST

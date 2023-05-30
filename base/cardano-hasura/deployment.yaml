@@ -24,6 +24,8 @@ spec:
           value: "true"
         - name: HASURA_GRAPHQL_ENABLE_TELEMETRY
           value: "false"
+        - name: HASURA_GRAPHQL_STRINGIFY_NUMERIC_TYPES
+          value: "true"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
@@ -49,7 +51,7 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
               key: postgresql-password
-        image: inputoutput/cardano-graphql-hasura:7.0.1
+        image: inputoutput/cardano-graphql-hasura:8.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

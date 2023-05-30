@@ -1,14 +1,12 @@
 - op: replace
   path: /spec/template/spec/containers/0/env
   value:
-    - name: ALLOW_INTROSPECTION
-      value: "true"
-    - name: CACHE_ENABLED
-      value: "true"
     - name: LOGGER_MIN_SEVERITY
       value: "info"
     - name: HASURA_URI
       value: http://hasura-headless:8080
+    - name: METADATA_SERVER_URI
+      value: https://d.cardano-token-registry-api.mainnet.dandelion.link
     - name: OGMIOS_HOST
       value: ogmios
     - name: OGMIOS_PORT

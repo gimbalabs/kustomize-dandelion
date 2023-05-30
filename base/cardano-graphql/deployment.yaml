@@ -17,15 +17,6 @@ spec:
         io.kompose.service: cardano-graphql
     spec:
       initContainers:
-      - name: configure
-        command: ["bash", "/configmap/initContainer-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.35.5-2
-        imagePullPolicy: IfNotPresent
-        volumeMounts:
-        - name: cardano-graphql-config
-          mountPath: /config
-        - name: cardano-graphql-configmap
-          mountPath: /configmap
       - name: wait-for-tip
         command: ["bash", "-x", "/configmap/initContainer-wait-for-tip"]
         image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
@@ -75,8 +66,6 @@ spec:
               name: init0-postgresql-ha-pgpool-custom-users
               key: passwords
         volumeMounts:
-        - name: cardano-graphql-config
-          mountPath: /config
         - name: cardano-graphql-configmap
           mountPath: /configmap
         - name: node-ipc
@@ -89,8 +78,6 @@ spec:
           value: "true"
         - name: LOGGER_MIN_SEVERITY
           value: "info"
-        - name: CARDANO_NODE_CONFIG_PATH
-          value: /opt/cardano/cnode/files/config.json
         - name: HASURA_URI
           value: http://hasura-headless:8080
         - name: METADATA_SERVER_URI
@@ -117,7 +104,7 @@ spec:
           value: /run/secrets/postgres-password/POSTGRES_PASSWORD
         - name: CARDANO_NODE_SOCKET_PATH
           value: /ipc/node.socket
-        image: inputoutput/cardano-graphql:7.0.1
+        image: inputoutput/cardano-graphql:8.0.0-mainnet
         #command: ["sh", "-c", "while true; do sleep 6969; done"]
         imagePullPolicy: Always
         name: cardano-graphql
@@ -133,8 +120,6 @@ spec:
           timeoutSeconds: 10
         resources: {}
         volumeMounts:
-        - name: cardano-graphql-config
-          mountPath: /opt/cardano/cnode/files
         - name: cardano-graphql-configmap
           mountPath: /configmap
         - name: common-env
@@ -164,7 +149,141 @@ spec:
       volumes:
       - name: node-ipc
         emptyDir: {}
-      - name: cardano-graphql-config
+      - name: cardano-graphql-configmap
+        configMap:
+          name: cardano-graphql-configmap
+      - name: common-env
+        configMap:
+          name: common-env
+      - name: postgres-password
+        secret:
+          secretName: init0-postgresql-ha-postgresql
+          items:
+          - key: postgresql-password
+            path: POSTGRES_PASSWORD
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: cardano-graphql-background
+  name: cardano-graphql-background
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      io.kompose.service: cardano-graphql-background
+  template:
+    metadata:
+      labels:
+        io.kompose.service: cardano-graphql-background
+    spec:
+      initContainers:
+      - name: wait-for-tip
+        command: ["bash", "-x", "/configmap/initContainer-wait-for-tip"]
+        image: gimbalabs/cardano-db-sync-init-container:1.35.7-0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: CARDANO_NODE_SOCKET_TCP_HOST
+          value: "cardano-node-headless"
+        - name: CARDANO_NODE_SOCKET_TCP_PORT
+          value: "30000"
+        - name: SOCAT_TIMEOUT
+          value: "3600"
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST_RW
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_USER
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-postgresql
+              key: postgresql-password
+        - name: POSTGRES_USER_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: usernames
+        - name: POSTGRES_PASSWORD_RO
+          valueFrom:
+            secretKeyRef:
+              name: init0-postgresql-ha-pgpool-custom-users
+              key: passwords
+        volumeMounts:
+        - name: cardano-graphql-configmap
+          mountPath: /configmap
+        - name: node-ipc
+          mountPath: /ipc
+      containers:
+      - env:
+        - name: LOGGER_MIN_SEVERITY
+          value: "info"
+        - name: HASURA_URI
+          value: http://hasura-headless:8080
+        - name: METADATA_SERVER_URI
+          value: http://cardano-token-registry:3042
+        - name: OGMIOS_HOST
+          value: ogmios
+        - name: OGMIOS_PORT
+          value: "1337"
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_HOST_RW
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: common-env
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB_FILE
+          value: /run/secrets/common-env/POSTGRES_DB
+        - name: POSTGRES_USER_FILE
+          value: /run/secrets/common-env/POSTGRES_USER
+        - name: POSTGRES_PASSWORD_FILE
+          value: /run/secrets/postgres-password/POSTGRES_PASSWORD
+        - name: CARDANO_NODE_SOCKET_PATH
+          value: /ipc/node.socket
+        image: inputoutput/cardano-graphql-background:8.0.0-mainnet
+        #command: ["sh", "-c", "while true; do sleep 6969; done"]
+        imagePullPolicy: Always
+        name: cardano-graphql-background
+        resources: {}
+        volumeMounts:
+        - name: cardano-graphql-configmap
+          mountPath: /configmap
+        - name: common-env
+          mountPath: /run/secrets/common-env
+          readOnly: true
+        - name: postgres-password
+          mountPath: /run/secrets/postgres-password
+          readOnly: true
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - name: node-ipc
         emptyDir: {}
       - name: cardano-graphql-configmap
         configMap:

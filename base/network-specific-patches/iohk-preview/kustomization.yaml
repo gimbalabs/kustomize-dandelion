@@ -24,10 +24,6 @@ patches:
     kind: StatefulSet
     name: cardano-node
 # cardano-graphql
-- path: patches/cardano-graphql-genesis-image.yaml
-  target:
-    kind: Deployment
-    name: cardano-graphql
 - path: patches/cardano-graphql-deployment-env.yaml
   target:
     kind: Deployment
@@ -36,6 +32,15 @@ patches:
   target:
     kind: Deployment
     name: cardano-graphql
+# cardano-graphql-background
+- path: patches/cardano-graphql-background-deployment-env.yaml
+  target:
+    kind: Deployment
+    name: cardano-graphql-background
+- path: patches/cardano-graphql-background-deployment-image.yaml
+  target:
+    kind: Deployment
+    name: cardano-graphql-background
 # cardano-db-sync
 - path: patches/cardano-db-sync-genesis-image.yaml
   target:

@@ -20,7 +20,7 @@ spec:
       initContainers:
       - name: setup-node-config
         command: ["bash", "/configmap/initContainer-setup-node-config-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.35.5-2
+        image: repsistance/cardano-node:iohk-mn-passive-1.35.7-0
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: cardano-node-config
@@ -48,9 +48,9 @@ spec:
         - name: RESTORE_SNAPSHOT
           value: "true"
         - name: DB_SYNC_SNAPSHOT_TESTNET_S3_BUCKET_URI
-          value: "s3://updates-cardano-testnet/cardano-db-sync/13/"
+          value: "s3://updates-cardano-testnet/cardano-db-sync/13.1/"
         - name: DB_SYNC_SNAPSHOT_MAINNET_S3_BUCKET_URI
-          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/13/"
+          value: "s3://update-cardano-mainnet.iohk.io/cardano-db-sync/13.1/"
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
