@@ -19,6 +19,5 @@ data:
       --node-socket ${CARDANO_NODE_SOCKET_PATH} \
       --node-config ${CARDANO_NODE_CONFIG_PATH} \
       --since origin \
-      --defer-db-indexes \
       --workdir ${KUPO_DB_PATH} \
       --match '*/*'
