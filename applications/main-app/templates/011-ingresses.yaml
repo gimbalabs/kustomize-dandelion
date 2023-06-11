@@ -122,8 +122,6 @@ kind: Ingress
 metadata:
   name: ogmios-api
   namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
-  annotations:
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
   rules:
     - host: "ogmios-api.{{ .Values.dandelion.ingressBaseDomain }}"
@@ -137,7 +135,7 @@ spec:
             path: /
             pathType: Prefix
     {{- if .Values.dandelion.ingressAlternativeDomain }}
-    - host: "ogmios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+    - host: "ogmios.{{ .Values.dandelion.ingressAlternativeDomain }}"
       http:
         paths:
           - backend:
@@ -153,7 +151,7 @@ spec:
     - hosts:
         - "ogmios-api.{{ .Values.dandelion.ingressBaseDomain }}"
         {{- if .Values.dandelion.ingressAlternativeDomain }}
-        - "ogmios-api.{{ .Values.dandelion.ingressAlternativeDomain }}"
+        - "ogmios.{{ .Values.dandelion.ingressAlternativeDomain }}"
         {{- end }}
       #secretName: local-tls
 
@@ -355,8 +353,6 @@ kind: Ingress
 metadata:
   name: kupo-api
   namespace: dl-{{ .Values.dandelion.cardano.network }}{{ .Values.dandelion.namespaceSuffix }}
-  annotations:
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
 spec:
   rules:
     - host: "kupo.{{ .Values.dandelion.ingressBaseDomain }}"
