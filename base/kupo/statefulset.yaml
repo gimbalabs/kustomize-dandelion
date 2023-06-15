@@ -30,8 +30,8 @@ spec:
       containers:
       - name: kupo
         image: cardanosolutions/kupo
-#        command: ["sh", "-x", "/configmap/entrypoint"]
-        command: ["sh", "-c", "sleep 999999"]
+        command: ["sh", "-x", "/configmap/entrypoint"]
+#        command: ["sh", "-c", "sleep 999999"]
         env:
         - name: CARDANO_NODE_CONFIG_PATH
           value: "/opt/cardano/cnode/files/config.json"
