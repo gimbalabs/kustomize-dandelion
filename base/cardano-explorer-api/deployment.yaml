@@ -42,7 +42,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
-              key: postgresql-password
+              key: password
         image: inputoutput/cardano-explorer-api:3.1.2
         imagePullPolicy: IfNotPresent
         name: cardano-explorer-api
@@ -94,5 +94,5 @@ spec:
         secret:
           secretName: init0-postgresql-ha-postgresql
           items:
-          - key: postgresql-password
+          - key: password
             path: POSTGRES_PASSWORD

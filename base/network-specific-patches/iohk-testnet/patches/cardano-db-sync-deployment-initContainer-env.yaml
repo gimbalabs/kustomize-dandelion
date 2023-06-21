@@ -41,7 +41,7 @@
       valueFrom:
         secretKeyRef:
           name: init0-postgresql-ha-postgresql
-          key: postgresql-password
+          key: password
     - name: POSTGRES_USER_RO
       valueFrom:
         secretKeyRef:

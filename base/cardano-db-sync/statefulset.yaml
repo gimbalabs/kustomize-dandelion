@@ -75,7 +75,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
-              key: postgresql-password
+              key: password
         - name: POSTGRES_USER_RO
           valueFrom:
             secretKeyRef:
@@ -136,7 +136,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: init0-postgresql-ha-postgresql
-              key: postgresql-password
+              key: password
         image: gimbalabs/cardano-db-sync:13.0.5
         workingDir: /var/lib/cexplorer
         command: ["sh", "-x", "/configmap/entrypoint"]
@@ -195,7 +195,7 @@ spec:
         secret:
           secretName: init0-postgresql-ha-postgresql
           items:
-          - key: postgresql-password
+          - key: password
             path: POSTGRES_PASSWORD
       - name: dbsync-statedir
         persistentVolumeClaim:

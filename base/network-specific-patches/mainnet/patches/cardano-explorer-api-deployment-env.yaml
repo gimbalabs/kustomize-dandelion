@@ -26,5 +26,5 @@
     - name: POSTGRES_PASSWORD
       valueFrom:
         secretKeyRef:
-          key: postgresql-password
+          key: password
           name: init0-postgresql-ha-postgresql
