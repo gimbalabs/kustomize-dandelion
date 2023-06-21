@@ -102,7 +102,7 @@ spec:
           value: "1000"
         ports:
         - containerPort: 3000
-        image: gimbalabs/postgrest:v8.0.0
+        image: gimbalabs/postgrest:v9.0.0
         command: ["sh", "-c", "export PGRST_DB_URI=postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}; /bin/postgrest"]
         imagePullPolicy: IfNotPresent
         resources: {}
