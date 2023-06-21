@@ -126,7 +126,7 @@ data:
         sha256sum --check --status < snapshot.tgz.sha256sum
         if [ $? -eq 0 ]
         then
-          tar -zxf snapshot.tgz
+          tar -zxf snapshot.tgz && rm -f snapshot.tgz
           psql -U ${POSTGRES_USER} -h ${POSTGRES_HOST} -f *sql ${POSTGRES_DB}
           rm -f *sql
           mv *state* /db-sync-statedir
