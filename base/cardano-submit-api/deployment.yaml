@@ -26,7 +26,7 @@ spec:
           mountPath: /configmap
       containers:
       - name: cardano-submit-api
-        image: inputoutput/cardano-submit-api:1.35.3
+        image: inputoutput/cardano-submit-api:8.1.1
         command: ["sh", "-x", "/configmap/entrypoint"]
         env:
         - name: CARDANO_SUBMIT_API_CONFIG_PATH
