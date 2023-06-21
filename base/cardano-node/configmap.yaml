@@ -39,6 +39,8 @@ data:
       "RequiresNetworkMagic": "RequiresNoMagic",
       "ShelleyGenesisFile": "/opt/cardano/cnode/files/genesis.json",
       "ShelleyGenesisHash": "1a3be38bcbb7911969283716ad7aa550250226b76a61fc51cc9a9a35d9276d81",
+      "ConwayGenesisFile": "/opt/cardano/cnode/files/conway-genesis.json",
+      "ConwayGenesisHash": "f28f1c1280ea0d32f8cd3143e268650d6c1a8e221522ce4a7d20d62fc09783e1",
       "SocketPath": "/opt/cardano/cnode/sockets/node0.socket",
       "EnableLogMetrics": false,
       "EnableLogging": true,

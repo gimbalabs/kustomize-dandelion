@@ -20,7 +20,7 @@ spec:
       initContainers:
       - name: configure
         command: ["bash", "/configmap/initContainer-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-1.35.7-0
+        image: repsistance/cardano-node:iohk-mn-passive-8.1.1-0
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: kupo-config
