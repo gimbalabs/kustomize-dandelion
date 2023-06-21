@@ -60,7 +60,7 @@ spec:
           mountPath: /configmap
       containers:
       - name: blockfrost
-        image: gimbalabs/blockfrost-ryo:1.2.0
+        image: blockfrost/backend-ryo:v1.5.0
         imagePullPolicy: IfNotPresent
         resources: {}
         env:
