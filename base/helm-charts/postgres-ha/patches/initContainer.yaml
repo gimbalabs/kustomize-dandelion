@@ -1,0 +1,13 @@
+- op: add
+  path: /spec/template/spec/initContainers
+  value:
+      - name: conf-dir-workaround
+        command: ["sh", "-c", "mkdir -p /bitnami/postgresql/conf; chown -R 1001:1001 /bitnami/postgresql"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        image: alpine
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /bitnami/postgresql
+          name: data
