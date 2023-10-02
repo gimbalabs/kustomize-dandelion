@@ -2,5 +2,12 @@ helmCharts:
 - name: postgresql-ha
   valuesFile: helm-values.yaml
   releaseName: init0
-  version: 11.1.2
+  version: 11.9.8
   repo: https://charts.bitnami.com/bitnami
+
+patches:
+# postgres-ha
+- path: patches/initContainer.yaml
+  target:
+    kind: StatefulSet
+    name: init0-postgresql-ha-postgresql
