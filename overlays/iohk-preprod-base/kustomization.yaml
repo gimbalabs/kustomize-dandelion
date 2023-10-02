@@ -6,6 +6,8 @@ commonLabels:
 commonAnnotations:
   note: free-apis!
 
+namespace: dandelion-iohk-preprod
+
 bases:
 - ../../base/common
 - ../../base/cardano-node

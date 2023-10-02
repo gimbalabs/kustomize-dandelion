@@ -6,6 +6,8 @@ commonLabels:
 commonAnnotations:
   note: free-apis!
 
+namespace: dandelion-iohk-preprod
+
 bases:
 - ../iohk-preprod-base
 - ../../base/helm-charts/postgres-ha

@@ -20,7 +20,7 @@ spec:
       initContainers:
       - name: setup-node-config
         command: ["bash", "/configmap/initContainer-setup-node-config-entrypoint"]
-        image: repsistance/cardano-node:iohk-mn-passive-8.1.1-0
+        image: repsistance/cardano-node:iohk-mn-passive-8.1.2-0
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: cardano-node-config

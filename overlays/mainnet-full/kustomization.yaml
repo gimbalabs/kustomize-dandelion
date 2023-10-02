@@ -6,6 +6,8 @@ commonLabels:
 commonAnnotations:
   note: free-apis!
 
+namespace: dandelion-mainnet
+
 bases:
 - ../mainnet-base
 - ../../base/helm-charts/postgres-ha
