@@ -67,6 +67,7 @@ Before directly rendering an overlay, you might want to enable/disable some comp
 You need to execute this from the top dir of this git repository:
  
 ``` 
+# OVERLAY=mainnet-full
 OVERLAY=iohk-preprod-full
 OUTPUT_FILE=overlays/${OVERLAY}/output.yaml # this will contain the whole deploy manifest
 kustomize build \
@@ -80,6 +81,8 @@ You need to execute one of these options from the top dir of this git repository
 
 * A) Using plain `kubectl`:
 ```
+# NAMESPACE=dandelion-mainnet
+# OVERLAY=mainnet-full
 NAMESPACE=dandelion-iohk-preprod
 OVERLAY=iohk-preprod-full
 kubectl get ns ${NAMESPACE} || kubectl create ns ${NAMESPACE}
@@ -87,6 +90,8 @@ kubectl apply --validate=false -n ${NAMESPACE} -f overlays/${OVERLAY}/output.yam
 ```
 * B) Using convenient [kapp] tool to get diff between local manifests and currently deployed ones in cluster:
 ```
+# NAMESPACE=dandelion-mainnet
+# OVERLAY=mainnet-full
 OVERLAY=iohk-preprod-full
 NAMESPACE=dandelion-${OVERLAY}
 APP_NAME=${NAMESPACE}
