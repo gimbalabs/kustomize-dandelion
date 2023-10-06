@@ -110,14 +110,6 @@ spec:
         name: cardano-graphql
         ports:
         - containerPort: 3100
-        livenessProbe:
-          failureThreshold: 3
-          successThreshold: 1
-          exec:
-            command: ["bash", "/configmap/liveness-healthcheck"]
-          initialDelaySeconds: 3600
-          periodSeconds: 20
-          timeoutSeconds: 10
         resources: {}
         volumeMounts:
         - name: cardano-graphql-configmap
