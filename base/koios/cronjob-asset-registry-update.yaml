@@ -21,8 +21,10 @@ spec:
             - name: cardano-node-configmap
               mountPath: /cardano-node-configmap
             env:
+            - name: KOIOS_REPOSITORY
+              value: cardano-community/koios-artifacts
             - name: KOIOS_BRANCH
-              value: alpha
+              value: main
             - name: CNODE_CONFIG_FILE
               value: /cardano-node-configmap/config.json
             - name: PGHOST

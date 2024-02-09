@@ -10,15 +10,25 @@ spec:
       containers:
       - name: deploy-koios-sql
         command: ["bash", "-x", "/configmap/koios-deploy-sql-entrypoint"]
-        image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
+        #image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
+        image: repsistance/cardano-node:iohk-preprod-passive-8.1.1-0
         volumeMounts:
         - name: koios-configmap
           mountPath: /configmap
         - name: cardano-node-configmap
           mountPath: /cardano-node-configmap
         env:
+        - name: KOIOS_REPOSITORY
+          value: cardano-community/guild-operators
         - name: KOIOS_BRANCH
           value: alpha
+        - name: KOIOS_VERSION
+          value: "1.0.10"
+          #value: "420"
+        - name: CNODE_HOME
+          value: /opt/cardano/cnode
+        - name: USESYSVARS
+          value: Y
         - name: CNODE_CONFIG_FILE
           value: /cardano-node-configmap/config.json
         - name: PGHOST

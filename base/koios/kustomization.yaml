@@ -4,6 +4,12 @@ resources:
 - job-deploy-koios-sql.yaml
 - deployment.yaml
 - service.yaml
+- cronjob-active-stake-cache-update.yaml
+- cronjob-asset-info-cache-update.yaml
+- cronjob-asset-registry-update.yaml
+- cronjob-epoch-info-cache-update.yaml
+- cronjob-pool-history-cache-update.yaml
+- cronjob-populate-next-epoch-nonce.yaml
+- cronjob-stake-distribution-new-accounts-update.yaml
 - cronjob-stake-distribution-update.yaml
-- cronjob-asset-registry-update.yaml 
-- cronjob-pool-history-cache-update.yaml 
+- cronjob-stake-snapshot-cache.yaml

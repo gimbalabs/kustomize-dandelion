@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: koios-pool-history-cache-update
+  name: koios-active-stake-cache-update
 spec:
-  schedule: "*/10 * * * *"
+  schedule: "*/15 * * * *"
   jobTemplate:
     spec:
       backoffLimit: 0
@@ -12,8 +12,8 @@ spec:
         spec:
           serviceAccountName: koios-deploy-sql
           containers:
-          - name: koios-pool-history-cache-update
-            command: ["bash", "-x", "/configmap/pool-history-cache-update"]
+          - name: koios-active-stake-cache-update
+            command: ["bash", "-x", "/configmap/active-stake-cache-update"]
             image: gimbalabs/cardano-db-sync-init-container:1.35.3-0
             volumeMounts:
             - name: koios-configmap
@@ -22,9 +22,9 @@ spec:
               mountPath: /cardano-node-configmap
             env:
             - name: KOIOS_REPOSITORY
-              value: cardano-community/koios-artifacts
+              value: repsistance/koios-artifacts
             - name: KOIOS_BRANCH
-              value: main
+              value: develop
             - name: CNODE_CONFIG_FILE
               value: /cardano-node-configmap/config.json
             - name: PGHOST

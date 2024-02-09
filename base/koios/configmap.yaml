@@ -15,6 +15,53 @@ data:
     GRANT SELECT ON ALL TABLES IN SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
     GRANT USAGE ON SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
     GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA ${PGRST_DB_SCHEMA} TO ${POSTGRES_USER_RO};
+
+  active-stake-cache-update: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*active-stake-cache-update | grep -v ${MY_POD_NAME})
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/active-stake-cache-update.sh
+      bash -x active-stake-cache-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-active-stake-cache-update.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]' \
+        $pod
+    done
+
+  asset-info-cache-update: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*asset-info-cache-update | grep -v ${MY_POD_NAME})
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-info-cache-update.sh
+      bash -x asset-info-cache-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-asset-info-cache-update.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]' \
+        $pod
+    done
+
   asset-registry-update: |
     export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
     KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
@@ -23,7 +70,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
       bash -x asset-registry-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -31,6 +78,29 @@ data:
 
     echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
     kubectl get pods -n ${NAMESPACE} | grep ^koios-asset-registry-update.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]' \
+        $pod
+    done
+
+  epoch-info-cache-update: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*epoch-info-cache-update | grep -v ${MY_POD_NAME})
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/epoch-info-cache-update.sh
+      bash -x epoch-info-cache-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-epoch-info-cache-update.*Terminating | awk '{print $1}' | while read pod
     do
       kubectl patch pod -n ${NAMESPACE} \
         --type json \
@@ -46,7 +116,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
       bash -x pool-history-cache-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -54,6 +124,52 @@ data:
 
     echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
     kubectl get pods -n ${NAMESPACE} | grep ^koios-pool-history-cache-update.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]' \
+        $pod
+    done
+
+  populate-next-epoch-nonce: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*populate-next-epoch-nonce | grep -v ${MY_POD_NAME})
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/populate-next-epoch-nonce.sh
+      bash -x populate-next-epoch-nonce.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-populate-next-epoch-nonce.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]' \
+        $pod
+    done
+
+  stake-distribution-new-accounts-update: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*stake-distribution-new-accounts-update | grep -v ${MY_POD_NAME})
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-new-accounts-update.sh
+      bash -x stake-distribution-new-accounts-update.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-stake-distribution-new-accounts-update.*Terminating | awk '{print $1}' | while read pod
     do
       kubectl patch pod -n ${NAMESPACE} \
         --type json \
@@ -69,7 +185,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
       bash -x stake-distribution-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -84,8 +200,33 @@ data:
         $pod
     done
 
+  stake-snapshot-cache: |
+    export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
+    KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    ALREADY_RUNNING=$(curl -m 30 -sSk -H "Authorization: Bearer $KUBE_TOKEN" "${KUBE_API_URL}/${NAMESPACE}/pods" | jq -r '.items[] | select(.status.phase=="Running") | .metadata.name' | grep ^koios.*stake-snapshot-cache | grep -v ${MY_POD_NAME})
+    if [ -z "${ALREADY_RUNNING}" ]
+    then
+      bash -x /configmap/initContainer-entrypoint
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-snapshot-cache.sh
+      bash -x stake-snapshot-cache.sh
+    else
+      echo "[!] Previous cronjob job already running, skipping..."
+    fi
+
+    echo "[!] Cleaning up possibly stuck 'Terminating' pods..."
+    kubectl get pods -n ${NAMESPACE} | grep ^koios-stake-snapshot-cache.*Terminating | awk '{print $1}' | while read pod
+    do
+      kubectl patch pod -n ${NAMESPACE} \
+        --type json \
+        --patch '[ { "op": "remove", "path": "/metadata/finalizers" } ]' \
+        $pod
+    done
+
   koios-deploy-sql-entrypoint: |
     function init {
+      
+      apt update -qq && apt install -y postgresql-client
 
       export KUBE_API_URL="https://kubernetes.default.svc/api/v1/namespaces"
       KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
@@ -96,18 +237,23 @@ data:
       export CONFIG=${CNODE_CONFIG_FILE}
       export BRANCH=${KOIOS_BRANCH}
       export G_ACCOUNT=cardano-community
-      export URL_RAW="https://raw.githubusercontent.com/cardano-community/guild-operators/${BRANCH}"
+      #export G_ACCOUNT=repsistance
+      export URL_RAW="https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${BRANCH}"
       export DB_SCRIPTS_URL="${URL_RAW}/scripts/grest-helper-scripts/db-scripts"
 
       export CURL_TIMEOUT=20
       export PGCONNECT_TIMEOUT=10
     }
 
+    export CONFIG=${CNODE_CONFIG_FILE}
+    . /opt/cardano/cnode/scripts/env offline
     init
+    set +e
 
-    curl -LO https://raw.githubusercontent.com/cardano-community/guild-operators/${KOIOS_BRANCH}/scripts/grest-helper-scripts/setup-grest.sh
+    curl -LO https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/scripts/grest-helper-scripts/setup-grest.sh
 
     sed -i '/.*# Execution.*/,$d' setup-grest.sh
+    sed -i "s/^SGVERSION=.*/SGVERSION=${KOIOS_VERSION}/g" setup-grest.sh
 
     source setup-grest.sh
 
