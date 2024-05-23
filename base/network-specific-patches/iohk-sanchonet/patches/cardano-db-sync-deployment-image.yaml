@@ -1,0 +1,4 @@
+- op: replace
+  path: /spec/template/spec/containers/0/image
+  value:
+    gimbalabs/cardano-db-sync:sancho-4-3-0

@@ -177,6 +177,7 @@ data:
     cp /opt/cardano/cnode/files/byron-genesis.json /config/
     cp /opt/cardano/cnode/files/genesis.json /config/
     cp /opt/cardano/cnode/files/alonzo-genesis.json /config/
+    cp /opt/cardano/cnode/files/conway-genesis.json /config/
 
   entrypoint: |
     set +x
@@ -185,8 +186,8 @@ data:
     chmod 0600 ${PGPASSFILE}
     set -x
 
-    CARDANO_DB_SYNC_BINARY=$(find /nix/store/*cardano-db-sync-exe-cardano-db-sync*/bin -name cardano-db-sync)
-    CARDANO_DB_SYNC_SCHEMA_DIR=$(find /nix/store/*cardano-db-sync-schema*/ -name schema -type d)
+    CARDANO_DB_SYNC_BINARY=$(find /nix/store/*cardano-db-sync-exe-cardano-db-sync*/bin -name cardano-db-sync | tail -n1)
+    CARDANO_DB_SYNC_SCHEMA_DIR=$(echo /nix/store/*-schema/)
     if [ "${DISABLE_EPOCH}" == "true" ]; then DISABLE_EPOCH="--disable-epoch"; else DISABLE_EPOCH=""; fi
     if [ "${DISABLE_CACHE}" == "true" ]; then DISABLE_CACHE="--disable-cache"; else DISABLE_CACHE=""; fi
     if [ "${DISABLE_LEDGER}" == "true" ]; then DISABLE_LEDGER="--disable-ledger"; else DISABLE_LEDGER=""; fi

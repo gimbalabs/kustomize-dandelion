@@ -60,6 +60,8 @@ spec:
             secretKeyRef:
               name: init0-postgresql-ha-pgpool-custom-users
               key: passwords
+        - name: PGRST_DB_URI
+          value: postgres://$(PGUSER):$(PGPASSWORD)@$(PGHOST):$(PGPORT)/$(PGDATABASE)
         volumeMounts:
         - name: koios-configmap
           mountPath: /configmap
@@ -100,10 +102,11 @@ spec:
           value: grest
         - name: PGRST_MAX_ROWS
           value: "1000"
+        - name: PGRST_DB_URI
+          value: postgres://$(PGUSER):$(PGPASSWORD)@$(PGHOST):$(PGPORT)/$(PGDATABASE)
         ports:
         - containerPort: 3000
-        image: gimbalabs/postgrest:v9.0.0
-        command: ["sh", "-c", "export PGRST_DB_URI=postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}/${PGDATABASE}; /bin/postgrest"]
+        image: postgrest/postgrest:v12.0.2
         imagePullPolicy: IfNotPresent
         resources: {}
         volumeMounts:

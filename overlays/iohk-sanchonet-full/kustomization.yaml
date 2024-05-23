@@ -1,0 +1,28 @@
+commonLabels:
+  environment: production
+  cardano_network: sanchonet
+  cardano_node_type: haskell
+  project_name: dandelion
+commonAnnotations:
+  note: free-apis!
+
+namespace: dandelion-iohk-sanchonet
+
+bases:
+- ../iohk-sanchonet-base
+- ../../base/helm-charts/postgres-ha
+- ../../base/cardano-db-sync
+- ../../base/cardano-graphql
+- ../../base/cardano-hasura
+- ../../base/cardano-submit-api
+#- ../../base/metrics-exporter
+#- ../../base/ogmios
+- ../../base/postgrest
+- ../../base/koios
+#- ../../base/kupo
+
+resources:
+- resources/ingress.yaml
+
+components:
+- ../../base/network-specific-patches/iohk-sanchonet

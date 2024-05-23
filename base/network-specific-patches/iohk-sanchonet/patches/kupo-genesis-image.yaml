@@ -1,0 +1,4 @@
+- op: replace
+  path: /spec/template/spec/initContainers/0/image
+  value:
+    repsistance/cardano-node:iohk-sanchonet-passive-8.11.0-sancho2

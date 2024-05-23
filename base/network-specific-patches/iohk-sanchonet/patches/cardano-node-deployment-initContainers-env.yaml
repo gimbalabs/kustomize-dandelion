@@ -1,0 +1,9 @@
+- op: replace
+  path: /spec/template/spec/initContainers/1/env
+  value:
+    - name: RESTORE_SNAPSHOT
+      value: "false"
+    - name: NETWORK
+      value: sanchonet
+    - name: CNODE_DB_PATH
+      value: /data

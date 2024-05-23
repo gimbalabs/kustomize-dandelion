@@ -1,0 +1,237 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cardano-cardano-token-registry-api
+spec:
+  rules:
+    - host: cardano-token-registry-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-token-registry
+                port:
+                  number: 3042
+            path: /
+            pathType: Prefix
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - cardano-token-registry-api.iohk-preprod.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cardano-explorer-api
+spec:
+  rules:
+    - host: explorer-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-explorer-api
+                port:
+                  number: 8101
+            path: /
+            pathType: Prefix
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - explorer-api.iohk-preprod.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cardano-submit-api
+spec:
+  rules:
+    - host: submit-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-submit-api
+                port: 
+                  number: 8091
+            path: /
+            pathType: Prefix
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - submit-api.iohk-preprod.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cardano-graphql-api
+spec:
+  rules:
+    - host: graphql-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-graphql
+                port: 
+                  number: 3100
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - graphql-api.iohk-preprod.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chisel-api
+spec:
+  rules:
+    - host: chisel-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: chisel-server
+                port: 
+                  number: 40000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - chisel-api.iohk-preprod.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ogmios-api
+spec:
+  rules:
+    - host: ogmios-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: ogmios
+                port: 
+                  number: 1337
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - ogmios-api.iohk-preprod.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: postgrest-api
+spec:
+  rules:
+    - host: postgrest-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: postgrest
+                port: 
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - postgrest-api.iohk-preprod.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: koios-api
+spec:
+  rules:
+    - host: koios-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: koios-api
+                port: 
+                  number: 3000
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - koios-api.iohk-preprod.local
+    #secretName: local-tls
+
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rosetta-api
+spec:
+  rules:
+    - host: rosetta-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: cardano-rosetta
+                port: 
+                  number: 8080
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - rosetta-api.iohk-preprod.local
+    #secretName: local-tls
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kupo-api
+spec:
+  rules:
+    - host: kupo-api.iohk-preprod.local
+      http:
+        paths:
+          - backend:
+              service:
+                name: kupo
+                port:
+                  number: 1442
+            path: /
+            pathType: Prefix
+
+  # This section is only required if TLS is to be enabled for the Ingress
+  tls:
+  - hosts:
+    - kupo-api.iohk-preprod.local
+    #secretName: local-tls

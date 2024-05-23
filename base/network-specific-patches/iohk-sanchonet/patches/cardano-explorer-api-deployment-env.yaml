@@ -1,0 +1,30 @@
+- op: replace
+  path: /spec/template/spec/containers/0/env
+  value:
+    - name: NETWORK
+      value: testnet
+    - name: POSTGRES_HOST
+      valueFrom:
+        configMapKeyRef:
+          key: POSTGRES_HOST
+          name: common-env
+    - name: POSTGRES_PORT
+      valueFrom:
+        configMapKeyRef:
+          key: POSTGRES_PORT
+          name: common-env
+    - name: POSTGRES_DB
+      valueFrom:
+        configMapKeyRef:
+          key: POSTGRES_DB
+          name: common-env
+    - name: POSTGRES_USER
+      valueFrom:
+        configMapKeyRef:
+          key: POSTGRES_USER
+          name: common-env
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: password
+          name: init0-postgresql-ha-postgresql

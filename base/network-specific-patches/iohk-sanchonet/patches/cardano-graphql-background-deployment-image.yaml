@@ -1,0 +1,4 @@
+- op: replace
+  path: /spec/template/spec/containers/0/image
+  value:
+    cardanofoundation/cardano-graphql-background:8.0.3

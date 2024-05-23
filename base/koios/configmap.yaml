@@ -24,7 +24,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/active-stake-cache-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/active-stake-cache-update.sh
       bash -x active-stake-cache-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -47,7 +47,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-info-cache-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/asset-info-cache-update.sh
       bash -x asset-info-cache-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -70,7 +70,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/asset-registry-update.sh
       bash -x asset-registry-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -93,7 +93,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/epoch-info-cache-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/epoch-info-cache-update.sh
       bash -x epoch-info-cache-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -116,7 +116,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/pool-history-cache-update.sh
       bash -x pool-history-cache-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -139,7 +139,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/populate-next-epoch-nonce.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/populate-next-epoch-nonce.sh
       bash -x populate-next-epoch-nonce.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -162,7 +162,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-new-accounts-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/stake-distribution-new-accounts-update.sh
       bash -x stake-distribution-new-accounts-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -185,7 +185,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/stake-distribution-update.sh
       bash -x stake-distribution-update.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -208,7 +208,7 @@ data:
     if [ -z "${ALREADY_RUNNING}" ]
     then
       bash -x /configmap/initContainer-entrypoint
-      curl -sLO  https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/files/grest/cron/jobs/stake-snapshot-cache.sh
+      curl -sLO  https://raw.githubusercontent.com/${KOIOS_ARTIFACTS_REPOSITORY}/${KOIOS_ARTIFACTS_BRANCH}/files/grest/cron/jobs/stake-snapshot-cache.sh
       bash -x stake-snapshot-cache.sh
     else
       echo "[!] Previous cronjob job already running, skipping..."
@@ -235,11 +235,12 @@ data:
 
       touch /tmp/.pgpass && export PGPASSFILE=/tmp/.pgpass
       export CONFIG=${CNODE_CONFIG_FILE}
-      export BRANCH=${KOIOS_BRANCH}
+      export BRANCH=${KOIOS_ARTIFACTS_BRANCH}
       export G_ACCOUNT=cardano-community
       #export G_ACCOUNT=repsistance
-      export URL_RAW="https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${BRANCH}"
-      export DB_SCRIPTS_URL="${URL_RAW}/scripts/grest-helper-scripts/db-scripts"
+      export SETUP_GREST_URL="https://raw.githubusercontent.com/cardano-community/guild-operators/alpha"
+      export DB_SCRIPTS_RAW="https://raw.githubusercontent.com/cardano-community/koios-artifacts/homer-sancho"
+      export DB_SCRIPTS_URL="${DB_SCRIPTS_RAW}/files/grest/rpc/db-scripts"
 
       export CURL_TIMEOUT=20
       export PGCONNECT_TIMEOUT=10
@@ -250,7 +251,7 @@ data:
     init
     set +e
 
-    curl -LO https://raw.githubusercontent.com/${KOIOS_REPOSITORY}/${KOIOS_BRANCH}/scripts/grest-helper-scripts/setup-grest.sh
+    curl -LO ${SETUP_GREST_URL}/scripts/grest-helper-scripts/setup-grest.sh
 
     sed -i '/.*# Execution.*/,$d' setup-grest.sh
     sed -i "s/^SGVERSION=.*/SGVERSION=${KOIOS_VERSION}/g" setup-grest.sh
